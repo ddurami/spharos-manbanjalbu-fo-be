@@ -14,3 +14,18 @@ spring:
     user:
       name: test
       password: test
+
+jwt:
+  secret: test-secret-key-min-256-bits-long-for-unit-test!!
+  expiration-ms: 3600000
+
+member:
+  verification:
+    expose-dev-code: true
+
+mail:
+  verification:
+    mock-enabled: true
+
+octomo:
+  mock-enabled: true
