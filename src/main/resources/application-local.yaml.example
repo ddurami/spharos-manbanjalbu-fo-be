@@ -1,0 +1,30 @@
+# 이 파일을 복사해서 application-local.yaml 로 저장한 뒤 값을 채워주세요.
+# application-local.yaml 은 .gitignore 에 등록되어 GitHub 에 올라가지 않습니다.
+#
+# Gmail 실발송 설정
+# 1. Google 계정 > 보안 > 2단계 인증 활성화
+# 2. Google 계정 > 보안 > 앱 비밀번호 생성 (메일 / Windows 등)
+# 3. spring.mail.password 에 앱 비밀번호 16자리 입력
+# 4. application.yaml 의 mail.verification.mock-enabled: false 로 변경
+#
+# Swagger mock 테스트: application.yaml 에 mock-enabled: true 유지 (devCode 사용)
+
+spring:
+  datasource:
+    password: your-db-password
+
+  mail:
+    username: your@gmail.com
+    password: your-gmail-app-password-16digits
+
+# 이메일 민감/개인 설정 (발신 주소)
+# mock-enabled, subject 등 공통 설정은 application.yaml 참고
+mail:
+  verification:
+    from: your@gmail.com
+
+# Octomo 민감/개인 설정 (api-key, 수신번호)
+# mock-enabled, within-minutes 등 공통 설정은 application.yaml 참고
+octomo:
+  api-key: your-octomo-api-key
+  receive-phone-number: your-octomo-receive-number
