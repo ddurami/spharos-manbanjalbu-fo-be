@@ -36,6 +36,7 @@ public enum ErrorCode {
 	CART_QUANTITY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "하나의 상품은 최대 20개까지만 담을 수 있습니다."),
 
 	PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
+	PRODUCT_NOT_ON_SALE(HttpStatus.BAD_REQUEST, "현재 판매 중이 아닌 상품입니다."),
 	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
 
 	private final HttpStatus status;

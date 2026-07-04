@@ -12,6 +12,9 @@ import com.spharos.manbanjalbu_be.domain.cart.repository.CartHistoryRepository;
 import com.spharos.manbanjalbu_be.domain.cart.repository.CartItemRepository;
 import com.spharos.manbanjalbu_be.domain.member.entity.Member;
 import com.spharos.manbanjalbu_be.domain.member.repository.MemberRepository;
+import com.spharos.manbanjalbu_be.domain.product.entity.Product;
+import com.spharos.manbanjalbu_be.domain.product.enums.ProductStatus;
+import com.spharos.manbanjalbu_be.domain.product.repository.ProductRepository;
 import com.spharos.manbanjalbu_be.global.exception.BusinessException;
 import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
@@ -30,18 +33,21 @@ public class CartService {
 	private final CartItemRepository cartItemRepository;
 	private final CartHistoryRepository cartHistoryRepository;
 	private final MemberRepository memberRepository;
+	private final ProductRepository productRepository;
 
 	public CartService(CartItemRepository cartItemRepository,
 			CartHistoryRepository cartHistoryRepository,
-			MemberRepository memberRepository) {
+			MemberRepository memberRepository,
+			ProductRepository productRepository) {
 		this.cartItemRepository = cartItemRepository;
 		this.cartHistoryRepository = cartHistoryRepository;
 		this.memberRepository = memberRepository;
+		this.productRepository = productRepository;
 	}
 
 	@Transactional(readOnly = true)
 	public CartListResponse getCartList(Long memberId) {
-		List<CartItem> cartItems = cartItemRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
+		List<CartItem> cartItems = cartItemRepository.findByMemberIdWithProduct(memberId);
 
 		List<CartItemResponse> cartItemResponses = cartItems.stream()
 				.map(CartItemResponse::from)
@@ -53,6 +59,13 @@ public class CartService {
 	public void addCartItem(Long memberId, CartAddRequest request) {
 		Member member = memberRepository.findById(memberId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+		Product product = productRepository.findById(request.productId())
+				.orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+		if (product.getStatus() != ProductStatus.ON_SALE) {
+			throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
+		}
 
 		Optional<CartItem> existingItem = cartItemRepository
 				.findByMemberIdAndProductId(memberId, request.productId());
@@ -80,7 +93,7 @@ public class CartService {
 
 			validateQuantityLimit(request.quantity());
 
-			CartItem cartItem = CartItem.create(member, request.productId(), request.quantity());
+			CartItem cartItem = CartItem.create(member, product, request.quantity());
 			cartItemRepository.save(cartItem);
 
 			cartHistoryRepository.save(CartHistory.create(
@@ -101,7 +114,7 @@ public class CartService {
 		cartItem.updateQuantity(request.quantity());
 
 		cartHistoryRepository.save(CartHistory.create(
-				cartItem.getMember(), cartItem.getId(), cartItem.getProductId(),
+				cartItem.getMember(), cartItem.getId(), cartItem.getProduct().getId(),
 				CartActionType.UPDATE_QUANTITY, request.quantity(),
 				beforeQuantity, request.quantity(),
 				null
@@ -117,7 +130,7 @@ public class CartService {
 			}
 
 			cartHistoryRepository.save(CartHistory.create(
-					cartItem.getMember(), cartItem.getId(), cartItem.getProductId(),
+					cartItem.getMember(), cartItem.getId(), cartItem.getProduct().getId(),
 					CartActionType.DELETE, cartItem.getQuantity(),
 					cartItem.getQuantity(), 0,
 					null
@@ -138,7 +151,7 @@ public class CartService {
 
 		for (CartItem cartItem : cartItems) {
 			cartHistoryRepository.save(CartHistory.create(
-					member, cartItem.getId(), cartItem.getProductId(),
+					member, cartItem.getId(), cartItem.getProduct().getId(),
 					CartActionType.DELETE, cartItem.getQuantity(),
 					cartItem.getQuantity(), 0,
 					"전체 삭제"

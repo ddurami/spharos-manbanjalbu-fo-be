@@ -1,6 +1,7 @@
 package com.spharos.manbanjalbu_be.domain.cart.entity;
 
 import com.spharos.manbanjalbu_be.domain.member.entity.Member;
+import com.spharos.manbanjalbu_be.domain.product.entity.Product;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -44,8 +45,9 @@ public class CartItem {
 	@JoinColumn(name = "member_id", nullable = false)
 	private Member member;
 
-	@Column(name = "product_id", nullable = false)
-	private Long productId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "product_id", nullable = false)
+	private Product product;
 
 	@Column(nullable = false)
 	private int quantity;
@@ -58,10 +60,10 @@ public class CartItem {
 	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
 
-	public static CartItem create(Member member, Long productId, int quantity) {
+	public static CartItem create(Member member, Product product, int quantity) {
 		CartItem cartItem = new CartItem();
 		cartItem.member = member;
-		cartItem.productId = productId;
+		cartItem.product = product;
 		cartItem.quantity = quantity;
 		return cartItem;
 	}
