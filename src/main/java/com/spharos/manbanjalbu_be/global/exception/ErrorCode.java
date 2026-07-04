@@ -28,7 +28,12 @@ public enum ErrorCode {
 	OCTOMO_CONFIG_INVALID(HttpStatus.BAD_REQUEST, "Octomo API 설정이 올바르지 않습니다."),
 	OCTOMO_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "휴대폰 문자 인증에 실패했습니다."),
 	OCTOMO_API_ERROR(HttpStatus.BAD_GATEWAY, "Octomo API 호출 중 오류가 발생했습니다."),
-	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
+	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
+
+	CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 아이템을 찾을 수 없습니다."),
+	CART_ITEM_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 장바구니 아이템입니다."),
+	CART_ITEM_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "장바구니에는 최대 20종류의 상품만 담을 수 있습니다."),
+	CART_QUANTITY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "하나의 상품은 최대 20개까지만 담을 수 있습니다.");
 
 	private final HttpStatus status;
 	private final String message;
