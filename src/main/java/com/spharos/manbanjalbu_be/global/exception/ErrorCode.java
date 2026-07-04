@@ -33,7 +33,10 @@ public enum ErrorCode {
 	CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 아이템을 찾을 수 없습니다."),
 	CART_ITEM_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 장바구니 아이템입니다."),
 	CART_ITEM_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "장바구니에는 최대 20종류의 상품만 담을 수 있습니다."),
-	CART_QUANTITY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "하나의 상품은 최대 20개까지만 담을 수 있습니다.");
+	CART_QUANTITY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "하나의 상품은 최대 20개까지만 담을 수 있습니다."),
+
+	PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
+	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String message;
