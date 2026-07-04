@@ -31,11 +31,13 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/health").permitAll()
+						.requestMatchers("/error").permitAll()
 						.requestMatchers("/api/member/auth/**").permitAll()
 						.requestMatchers("/api/member/terms").permitAll()
 						.requestMatchers("/api/member/join/**").permitAll()
 						.requestMatchers("/api/member/join").permitAll()
 						.requestMatchers("/api/member/login").permitAll()
+						.requestMatchers("/api/products/**", "/api/products", "/api/categories/**", "/api/categories", "/api/seasons/**", "/api/seasons").permitAll()
 						.requestMatchers(
 								"/swagger-ui.html",
 								"/swagger-ui/**",
