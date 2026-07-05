@@ -1,6 +1,7 @@
 package com.spharos.manbanjalbu_be.domain.member.service;
 
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberJoinRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.LoginIdCheckResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MarketingConsentResultResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberJoinCompleteResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.TermAgreementResultResponse;
@@ -48,6 +49,25 @@ public class MemberJoinService {
 		this.signupSessionRepository = signupSessionRepository;
 		this.memberTermsService = memberTermsService;
 		this.passwordEncoder = passwordEncoder;
+	}
+
+	@Transactional(readOnly = true)
+	public LoginIdCheckResponse checkLoginIdAvailability(String loginId) {
+		String trimmedLoginId = loginId == null ? "" : loginId.trim();
+
+		if (!StringUtils.hasText(trimmedLoginId)) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT, "아이디를 입력해주세요.");
+		}
+
+		if (trimmedLoginId.length() < 4 || trimmedLoginId.length() > 50) {
+			return new LoginIdCheckResponse(false, "아이디는 4~50자리여야 합니다.");
+		}
+
+		boolean available = !memberRepository.existsByLoginId(trimmedLoginId);
+		return new LoginIdCheckResponse(
+				available,
+				available ? "사용 가능한 아이디입니다." : "이미 사용 중인 아이디입니다."
+		);
 	}
 
 	public MemberJoinCompleteResponse join(MemberJoinRequest request) {

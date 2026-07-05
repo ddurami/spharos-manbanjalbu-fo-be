@@ -23,8 +23,11 @@ public class SwaggerConfig {
 								1~2. 이메일 또는 휴대폰 인증 (send → verify → verificationToken)
 								3. GET /api/member/terms
 								4. POST /api/member/join/terms (필수 약관 동의)
-								5. POST /api/member/join (회원 정보 입력, marketingConsent 확인)
-								6. POST /api/member/login
+								5. GET /api/member/join/login-id/check (아이디 중복 확인)
+								6. POST /api/member/join (회원 정보 입력, marketingConsent 확인)
+								7. POST /api/member/login
+
+								FO-FE 연동: CORS http://localhost:3000 허용, 응답 형식 ApiResponse { success, data, message }
 
 								보조: GET /api/member/join/session?verificationToken=...
 								""")

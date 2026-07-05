@@ -57,7 +57,7 @@ class MemberJoinLoginIntegrationTest {
 
 		mockMvc.perform(get("/api/member/terms"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.length()").value(3));
+				.andExpect(jsonPath("$.data.length()").value(4));
 
 		mockMvc.perform(post("/api/member/join/terms")
 						.contentType(MediaType.APPLICATION_JSON)
@@ -67,7 +67,8 @@ class MemberJoinLoginIntegrationTest {
 								  "agreements":[
 								    {"termsId":1,"agreed":true},
 								    {"termsId":2,"agreed":true},
-								    {"termsId":3,"agreed":false}
+								    {"termsId":3,"agreed":true},
+								    {"termsId":4,"agreed":false}
 								  ]
 								}
 								""".formatted(verificationToken)))
@@ -78,6 +79,11 @@ class MemberJoinLoginIntegrationTest {
 						.param("verificationToken", verificationToken))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.step").value("TERMS_AGREED"));
+
+		mockMvc.perform(get("/api/member/join/login-id/check")
+						.param("loginId", loginId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.available").value(true));
 
 		mockMvc.perform(post("/api/member/join")
 						.contentType(MediaType.APPLICATION_JSON)
@@ -95,7 +101,7 @@ class MemberJoinLoginIntegrationTest {
 								""".formatted(verificationToken, loginId, password, email)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.loginId").value(loginId))
-				.andExpect(jsonPath("$.data.agreementResults.length()").value(3))
+				.andExpect(jsonPath("$.data.agreementResults.length()").value(4))
 				.andExpect(jsonPath("$.data.marketingConsent.agreed").value(false))
 				.andExpect(jsonPath("$.data.marketingConsent.resultMessage").value("광고성 정보 수신에 동의하지 않으셨습니다."));
 
@@ -153,7 +159,8 @@ class MemberJoinLoginIntegrationTest {
 								  "agreements":[
 								    {"termsId":1,"agreed":true},
 								    {"termsId":2,"agreed":true},
-								    {"termsId":3,"agreed":true}
+								    {"termsId":3,"agreed":true},
+								    {"termsId":4,"agreed":true}
 								  ]
 								}
 								""".formatted(verificationToken)))

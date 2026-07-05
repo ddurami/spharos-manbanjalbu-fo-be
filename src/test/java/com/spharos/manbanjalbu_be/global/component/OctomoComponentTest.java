@@ -25,13 +25,13 @@ class OctomoComponentTest {
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Authorization", "Octomo test-api-key"))
 				.andExpect(content().json("""
-						{"mobileNum":"01093939116","text":"699121"}
+						{"mobileNum":"01093939116","text":"699121","withinMinutes":5}
 						"""))
 				.andRespond(withSuccess("""
 						{"exists":true}
 						""", MediaType.APPLICATION_JSON));
 
-		OctomoComponent component = new OctomoComponent(restClient, "test-api-key", "16663538", false);
+		OctomoComponent component = new OctomoComponent(restClient, "test-api-key", "16663538", 5, false);
 
 		assertThat(component.existsMessage("01093939116", "699121")).isTrue();
 		server.verify();
@@ -46,15 +46,36 @@ class OctomoComponentTest {
 		server.expect(requestTo("https://api.octoverse.kr/octomo/v1/public/message/exists"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(content().json("""
-						{"mobileNum":"01093939116","text":"699121"}
+						{"mobileNum":"01093939116","text":"699121","withinMinutes":5}
 						"""))
 				.andRespond(withSuccess("""
 						{"verified":true}
 						""", MediaType.APPLICATION_JSON));
 
-		OctomoComponent component = new OctomoComponent(restClient, "test-api-key", "16663538", false);
+		OctomoComponent component = new OctomoComponent(restClient, "test-api-key", "16663538", 5, false);
 
 		assertThat(component.existsMessage("01093939116", "699121")).isTrue();
+		server.verify();
+	}
+
+	@Test
+	void existsMessage_trimsAuthCodeText() {
+		RestClient.Builder builder = RestClient.builder().baseUrl("https://api.octoverse.kr");
+		MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+		RestClient restClient = builder.build();
+
+		server.expect(requestTo("https://api.octoverse.kr/octomo/v1/public/message/exists"))
+				.andExpect(method(HttpMethod.POST))
+				.andExpect(content().json("""
+						{"mobileNum":"01093939116","text":"699121","withinMinutes":5}
+						"""))
+				.andRespond(withSuccess("""
+						{"exists":true}
+						""", MediaType.APPLICATION_JSON));
+
+		OctomoComponent component = new OctomoComponent(restClient, "test-api-key", "16663538", 5, false);
+
+		assertThat(component.existsMessage("01093939116", " 699121 ")).isTrue();
 		server.verify();
 	}
 }

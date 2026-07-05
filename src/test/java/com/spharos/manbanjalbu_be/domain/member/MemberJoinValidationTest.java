@@ -117,7 +117,8 @@ class MemberJoinValidationTest {
 								  "agreements":[
 								    {"termsId":1,"agreed":true},
 								    {"termsId":2,"agreed":true},
-								    {"termsId":3,"agreed":false}
+								    {"termsId":3,"agreed":true},
+								    {"termsId":4,"agreed":false}
 								  ]
 								}
 								""".formatted(verificationToken)))

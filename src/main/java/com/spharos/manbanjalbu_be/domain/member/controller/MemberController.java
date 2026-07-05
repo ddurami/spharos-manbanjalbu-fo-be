@@ -7,6 +7,7 @@ import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberLoginRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationConfirmRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationSendRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.TermsAgreementRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.LoginIdCheckResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberJoinCompleteResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberLoginResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.SignupSessionStatusResponse;
@@ -72,8 +73,12 @@ public class MemberController {
 	@Operation(
 			summary = "1. 휴대폰 Octomo 인증 요청",
 			description = """
-					mock 모드: authCode/devCode 반환 후 verify 호출.
-					실제 모드: authCode와 receivePhoneNumber를 FO에 표시하고, 사용자가 수신번호로 문자 발송 후 verify 호출.
+					[실연동 MO 인증] 서버가 문자를 보내지 않습니다.
+					1) 응답 data.authCode, data.receivePhoneNumber(1666-3538) 확인
+					2) 사용자가 본인 휴대폰(010...)에서 1666-3538로 authCode만 문자 발송
+					3) POST /auth/phone/verify 호출 (phone=본인 번호, code=authCode)
+
+					mock 모드(octomo.mock-enabled=true): devCode/authCode 반환 후 verify 호출.
 					"""
 	)
 	@PostMapping("/auth/phone/send")
@@ -128,6 +133,12 @@ public class MemberController {
 			@RequestParam String verificationToken
 	) {
 		return ApiResponse.ok(memberTermsService.getSessionStatus(verificationToken));
+	}
+
+	@Operation(summary = "아이디 중복 확인", description = "회원가입 정보 입력 단계에서 loginId 사용 가능 여부 확인")
+	@GetMapping("/join/login-id/check")
+	public ApiResponse<LoginIdCheckResponse> checkLoginId(@RequestParam String loginId) {
+		return ApiResponse.ok(memberJoinService.checkLoginIdAvailability(loginId));
 	}
 
 	@Operation(summary = "6. 로그인", description = "회원가입 완료 후 loginId/password 로 JWT 발급")
