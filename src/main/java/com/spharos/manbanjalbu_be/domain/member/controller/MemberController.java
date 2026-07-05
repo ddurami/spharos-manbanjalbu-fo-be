@@ -2,11 +2,13 @@ package com.spharos.manbanjalbu_be.domain.member.controller;
 
 import com.spharos.manbanjalbu_be.domain.member.dto.request.EmailVerificationConfirmRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.EmailVerificationSendRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.request.FindLoginIdRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberJoinRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberLoginRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationConfirmRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationSendRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.TermsAgreementRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.FindLoginIdResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.LoginIdCheckResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberJoinCompleteResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberLoginResponse;
@@ -16,6 +18,7 @@ import com.spharos.manbanjalbu_be.domain.member.dto.response.TermsResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.VerificationConfirmResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.VerificationSendResponse;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberAuthService;
+import com.spharos.manbanjalbu_be.domain.member.service.MemberFindIdService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberJoinService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberLoginService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberTermsService;
@@ -41,20 +44,28 @@ public class MemberController {
 	private final MemberTermsService memberTermsService;
 	private final MemberJoinService memberJoinService;
 	private final MemberLoginService memberLoginService;
+	private final MemberFindIdService memberFindIdService;
 
 	public MemberController(
 			MemberAuthService memberAuthService,
 			MemberTermsService memberTermsService,
 			MemberJoinService memberJoinService,
-			MemberLoginService memberLoginService
+			MemberLoginService memberLoginService,
+			MemberFindIdService memberFindIdService
 	) {
 		this.memberAuthService = memberAuthService;
 		this.memberTermsService = memberTermsService;
 		this.memberJoinService = memberJoinService;
 		this.memberLoginService = memberLoginService;
+		this.memberFindIdService = memberFindIdService;
 	}
 
-	@Operation(summary = "1. 이메일 인증번호 발송", description = "응답 data.devCode 에 인증번호가 포함됩니다. (mock 모드 또는 dev 설정)")
+	@Operation(summary = "1. 이메일 인증번호 발송", description = """
+			이메일 인증번호를 발송합니다.
+			- devCode: 로컬/Swagger용 (member.verification.expose-dev-code=true 일 때만 표시)
+			- authCode: 이메일 인증에서는 항상 null (휴대폰 Octomo 전용)
+			- mock 또는 expose-dev-code=false 이면 devCode null → 실제 메일함 확인
+			""")
 	@PostMapping("/auth/email/send")
 	public ApiResponse<VerificationSendResponse> sendEmailVerification(
 			@Valid @RequestBody EmailVerificationSendRequest request
@@ -145,5 +156,19 @@ public class MemberController {
 	@PostMapping("/login")
 	public ApiResponse<MemberLoginResponse> login(@Valid @RequestBody MemberLoginRequest request) {
 		return ApiResponse.ok(memberLoginService.login(request));
+	}
+
+	@Operation(
+			summary = "아이디 찾기",
+			description = """
+					이메일 또는 휴대폰 인증 완료 후 호출.
+					1) POST /auth/email/send → /auth/email/verify (또는 phone/send → phone/verify)
+					2) verify 응답의 verificationToken 으로 본 API 호출
+					3) 등록된 loginId 를 마스킹 없이 반환
+					"""
+	)
+	@PostMapping("/find-id")
+	public ApiResponse<FindLoginIdResponse> findLoginId(@Valid @RequestBody FindLoginIdRequest request) {
+		return ApiResponse.ok(memberFindIdService.findLoginId(request));
 	}
 }
