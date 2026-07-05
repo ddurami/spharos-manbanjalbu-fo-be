@@ -8,7 +8,9 @@ import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberLoginRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationConfirmRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationSendRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.TermsAgreementRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.request.ResetPasswordRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.FindLoginIdResponse;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.ResetPasswordResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.LoginIdCheckResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberJoinCompleteResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberLoginResponse;
@@ -19,6 +21,7 @@ import com.spharos.manbanjalbu_be.domain.member.dto.response.VerificationConfirm
 import com.spharos.manbanjalbu_be.domain.member.dto.response.VerificationSendResponse;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberAuthService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberFindIdService;
+import com.spharos.manbanjalbu_be.domain.member.service.MemberFindPasswordService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberJoinService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberLoginService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberTermsService;
@@ -45,19 +48,22 @@ public class MemberController {
 	private final MemberJoinService memberJoinService;
 	private final MemberLoginService memberLoginService;
 	private final MemberFindIdService memberFindIdService;
+	private final MemberFindPasswordService memberFindPasswordService;
 
 	public MemberController(
 			MemberAuthService memberAuthService,
 			MemberTermsService memberTermsService,
 			MemberJoinService memberJoinService,
 			MemberLoginService memberLoginService,
-			MemberFindIdService memberFindIdService
+			MemberFindIdService memberFindIdService,
+			MemberFindPasswordService memberFindPasswordService
 	) {
 		this.memberAuthService = memberAuthService;
 		this.memberTermsService = memberTermsService;
 		this.memberJoinService = memberJoinService;
 		this.memberLoginService = memberLoginService;
 		this.memberFindIdService = memberFindIdService;
+		this.memberFindPasswordService = memberFindPasswordService;
 	}
 
 	@Operation(summary = "1. 이메일 인증번호 발송", description = """
@@ -170,5 +176,33 @@ public class MemberController {
 	@PostMapping("/find-id")
 	public ApiResponse<FindLoginIdResponse> findLoginId(@Valid @RequestBody FindLoginIdRequest request) {
 		return ApiResponse.ok(memberFindIdService.findLoginId(request));
+	}
+
+	@Operation(
+			summary = "비밀번호 찾기 - 계정 확인",
+			description = """
+					이메일 또는 휴대폰 인증 완료 후 호출.
+					1) POST /auth/email/send → /auth/email/verify (또는 phone/send → phone/verify)
+					2) verify 응답의 verificationToken 으로 본 API 호출
+					3) 등록된 loginId 를 마스킹 없이 반환 (세션 유지 → reset API 호출)
+					"""
+	)
+	@PostMapping("/find-password/verify")
+	public ApiResponse<FindLoginIdResponse> verifyAccountForPasswordReset(
+			@Valid @RequestBody FindLoginIdRequest request
+	) {
+		return ApiResponse.ok(memberFindPasswordService.verifyAccount(request));
+	}
+
+	@Operation(
+			summary = "비밀번호 찾기 - 비밀번호 재설정",
+			description = """
+					계정 확인(verify) 완료 후 동일 verificationToken 으로 호출.
+					비밀번호: 8~16자, 영문 대소문자+특수문자 각 1개 이상.
+					"""
+	)
+	@PostMapping("/find-password/reset")
+	public ApiResponse<ResetPasswordResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+		return ApiResponse.ok(memberFindPasswordService.resetPassword(request), "비밀번호가 변경되었습니다.");
 	}
 }

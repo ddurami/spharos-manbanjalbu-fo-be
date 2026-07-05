@@ -99,4 +99,8 @@ public class Member {
 	public void recordLogin() {
 		this.lastLoginAt = LocalDateTime.now();
 	}
+
+	public void changePassword(String encodedPassword) {
+		this.password = encodedPassword;
+	}
 }
