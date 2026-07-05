@@ -75,6 +75,10 @@ public class SignupSession {
 		this.step = SignupStep.TERMS_AGREED;
 	}
 
+	public void markPasswordResetVerified() {
+		this.step = SignupStep.PASSWORD_RESET_VERIFIED;
+	}
+
 	public boolean isExpired() {
 		return LocalDateTime.now().isAfter(expiresAt);
 	}
