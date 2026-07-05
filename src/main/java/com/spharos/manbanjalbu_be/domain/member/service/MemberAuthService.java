@@ -102,8 +102,11 @@ public class MemberAuthService {
 		);
 
 		return new VerificationSendResponse(
-				"아래 Octomo 수신번호로 인증코드를 문자 발송한 뒤 verify API를 호출해주세요.",
-				exposeDevCode ? authCode : null,
+				"""
+						본인 휴대폰에서 아래 수신번호로 인증코드만 문자 발송한 뒤 [다음]을 눌러주세요.
+						(서버에서 문자를 보내지 않습니다. MO 인증 방식)
+						""".trim(),
+				null,
 				authCode,
 				receivePhoneNumber
 		);
@@ -111,17 +114,50 @@ public class MemberAuthService {
 
 	public VerificationConfirmResponse confirmPhoneVerification(PhoneVerificationConfirmRequest request) {
 		String phone = normalizePhone(request.phone());
+		String code = request.code().trim();
+
+		log.info("[OCTOMO] 휴대폰 인증 확인 요청 - phone: {}, code: {}", phone, code);
 
 		if (octomoComponent.isMockEnabled()) {
-			return confirmLocalVerification(AuthMethod.PASS, phone, request.code(), "MOCK-CI-" + phone);
+			return confirmLocalVerification(AuthMethod.PASS, phone, code, "MOCK-CI-" + phone);
 		}
 
-		boolean verified = octomoComponent.existsMessage(phone, request.code());
+		boolean verified = verifyOctomoMessageWithRetry(phone, code);
 		if (!verified) {
-			throw new BusinessException(ErrorCode.OCTOMO_VERIFICATION_FAILED, "인증번호가 일치하지 않거나 유효 시간이 만료되었습니다.");
+			throw new BusinessException(
+					ErrorCode.OCTOMO_VERIFICATION_FAILED,
+					"""
+							인증 문자를 확인하지 못했습니다.
+							1) 본인 휴대폰(%s)에서 1666-3538로 인증코드만 발송했는지
+							2) 문자 전송 후 10~30초 뒤 [다음]을 눌렀는지 확인해주세요.
+							""".formatted(phone).trim()
+			);
 		}
 
 		return createIdentityVerifiedSession(AuthMethod.PASS, phone, "OCTOMO-CI-" + phone);
+	}
+
+	private boolean verifyOctomoMessageWithRetry(String phone, String code) {
+		int maxAttempts = 3;
+		long waitMillis = 2_000L;
+
+		for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+			if (octomoComponent.existsMessage(phone, code)) {
+				return true;
+			}
+
+			if (attempt < maxAttempts) {
+				log.info("Octomo 인증 재시도 대기 - phone: {}, attempt: {}/{}", phone, attempt, maxAttempts);
+				try {
+					Thread.sleep(waitMillis);
+				} catch (InterruptedException exception) {
+					Thread.currentThread().interrupt();
+					break;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	private VerificationConfirmResponse confirmLocalVerification(

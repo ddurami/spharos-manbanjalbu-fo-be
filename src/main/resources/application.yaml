@@ -7,7 +7,7 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/starbucks7th?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/starbucks7th?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
 
@@ -41,6 +41,10 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://127.0.0.1:3000,http://121.175.193.122:3000}
+
 jwt:
   secret: ${JWT_SECRET:manbanjalbu-local-dev-secret-key-min-256-bits-long!!}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
@@ -48,7 +52,7 @@ jwt:
 member:
   verification:
     expire-minutes: ${MEMBER_VERIFICATION_EXPIRE_MINUTES:5}
-    expose-dev-code: ${MEMBER_VERIFICATION_EXPOSE_DEV_CODE:true}
+    expose-dev-code: ${MEMBER_VERIFICATION_EXPOSE_DEV_CODE:false}
   signup-session:
     expire-minutes: ${MEMBER_SIGNUP_SESSION_EXPIRE_MINUTES:30}
 
@@ -60,6 +64,8 @@ mail:
 octomo:
   mock-enabled: ${OCTOMO_MOCK_ENABLED:false}
   api-base-url: ${OCTOMO_API_BASE_URL:https://api.octoverse.kr}
+  receive-phone-number: ${OCTOMO_RECEIVE_PHONE_NUMBER:16663538}
+  within-minutes: ${OCTOMO_WITHIN_MINUTES:${member.verification.expire-minutes}}
 
 springdoc:
   swagger-ui:

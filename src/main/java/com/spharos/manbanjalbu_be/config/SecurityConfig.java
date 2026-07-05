@@ -1,5 +1,6 @@
 package com.spharos.manbanjalbu_be.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,9 +19,14 @@ import java.util.List;
 public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final String allowedOriginPatterns;
 
-	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+	public SecurityConfig(
+			JwtAuthenticationFilter jwtAuthenticationFilter,
+			@Value("${app.cors.allowed-origin-patterns}") String allowedOriginPatterns
+	) {
 		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+		this.allowedOriginPatterns = allowedOriginPatterns;
 	}
 
 	@Bean
@@ -53,7 +59,13 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOriginPatterns(List.of("*"));
+		configuration.setAllowedOriginPatterns(
+				List.of(allowedOriginPatterns.split(","))
+						.stream()
+						.map(String::trim)
+						.filter(origin -> !origin.isEmpty())
+						.toList()
+		);
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);

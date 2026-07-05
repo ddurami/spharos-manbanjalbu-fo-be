@@ -8,4 +8,6 @@ import java.util.List;
 public interface TermsRepository extends JpaRepository<Terms, Long> {
 
 	List<Terms> findAllByOrderByIdAsc();
+
+	boolean existsByTitle(String title);
 }

@@ -31,7 +31,7 @@ public class EmailComponent {
 			@Autowired(required = false) JavaMailSender mailSender,
 			@Value("${spring.mail.username:}") String mailUsername,
 			@Value("${spring.mail.password:}") String mailPassword,
-			@Value("${mail.verification.mock-enabled:true}") boolean mockEnabled,
+			@Value("${mail.verification.mock-enabled:false}") boolean mockEnabled,
 			@Value("${mail.verification.from:}") String fromAddress,
 			@Value("${mail.verification.subject:[스타벅스] 이메일 인증번호}") String subject,
 			@Value("${member.verification.expire-minutes:5}") long expireMinutes

@@ -22,18 +22,29 @@ public class OctomoComponent {
 	private final RestClient octomoRestClient;
 	private final String apiKey;
 	private final String receivePhoneNumber;
+	private final int withinMinutes;
 	private final boolean mockEnabled;
 
 	public OctomoComponent(
 			RestClient octomoRestClient,
 			@Value("${octomo.api-key:}") String apiKey,
-			@Value("${octomo.receive-phone-number:}") String receivePhoneNumber,
-			@Value("${octomo.mock-enabled:true}") boolean mockEnabled
+			@Value("${octomo.receive-phone-number:16663538}") String receivePhoneNumber,
+			@Value("${octomo.within-minutes:5}") int withinMinutes,
+			@Value("${octomo.mock-enabled:false}") boolean mockEnabled
 	) {
 		this.octomoRestClient = octomoRestClient;
 		this.apiKey = apiKey;
 		this.receivePhoneNumber = normalizePhone(receivePhoneNumber);
+		this.withinMinutes = withinMinutes;
 		this.mockEnabled = mockEnabled;
+
+		if (!mockEnabled) {
+			log.info(
+					"Octomo 실연동 모드 - receivePhoneNumber: {}, withinMinutes: {}",
+					this.receivePhoneNumber,
+					this.withinMinutes
+			);
+		}
 	}
 
 	public boolean isMockEnabled() {
@@ -62,10 +73,13 @@ public class OctomoComponent {
 
 		validateConfig();
 
+		String normalizedPhone = normalizePhone(mobileNum);
+		String normalizedText = normalizeAuthCode(text);
+
 		OctomoMessageExistsRequest requestBody = new OctomoMessageExistsRequest(
-				normalizePhone(mobileNum),
-				text,
-				null
+				normalizedPhone,
+				normalizedText,
+				withinMinutes
 		);
 
 		try {
@@ -82,7 +96,13 @@ public class OctomoComponent {
 				throw new BusinessException(ErrorCode.OCTOMO_API_ERROR, "Octomo API 응답이 없습니다.");
 			}
 
-			log.info("Octomo 문자 인증 조회 - mobileNum: {}, verified: {}", normalizePhone(mobileNum), response.isVerified());
+			log.info(
+					"Octomo 문자 인증 조회 - mobileNum: {}, text: {}, withinMinutes: {}, verified: {}",
+					normalizedPhone,
+					normalizedText,
+					withinMinutes,
+					response.isVerified()
+			);
 			return response.isVerified();
 		} catch (RestClientResponseException exception) {
 			log.error(
@@ -93,7 +113,7 @@ public class OctomoComponent {
 			);
 			throw new BusinessException(ErrorCode.OCTOMO_API_ERROR, resolveOctomoApiErrorMessage(exception));
 		} catch (RestClientException exception) {
-			log.error("Octomo API 호출 실패 - mobileNum: {}", normalizePhone(mobileNum), exception);
+			log.error("Octomo API 호출 실패 - mobileNum: {}", normalizedPhone, exception);
 			throw new BusinessException(ErrorCode.OCTOMO_API_ERROR, "Octomo API 호출 중 오류가 발생했습니다.");
 		}
 	}
@@ -101,8 +121,11 @@ public class OctomoComponent {
 	private String resolveOctomoApiErrorMessage(RestClientResponseException exception) {
 		int status = exception.getStatusCode().value();
 		return switch (status) {
-			case 401, 403 -> "Octomo API Key가 올바르지 않습니다. application-local.yaml 의 octomo.api-key 를 확인해주세요.";
-			case 400 -> "Octomo API 요청 형식이 올바르지 않습니다. 1666-3538로 인증코드 문자 발송 후 다시 시도해주세요.";
+			case 401, 403 -> "Octomo API Key가 올바르지 않습니다. octomo.api-key 를 확인해주세요.";
+			case 400 -> """
+					Octomo API 요청 형식이 올바르지 않습니다.
+					본인 휴대폰(010...)에서 1666-3538로 인증코드만 문자 발송한 뒤 다시 시도해주세요.
+					""".trim();
 			default -> "Octomo API 호출 중 오류가 발생했습니다. (HTTP " + status + ")";
 		};
 	}
@@ -122,5 +145,9 @@ public class OctomoComponent {
 
 	private String normalizePhone(String phone) {
 		return phone.replaceAll("[^0-9]", "");
+	}
+
+	private String normalizeAuthCode(String text) {
+		return text == null ? "" : text.trim();
 	}
 }
