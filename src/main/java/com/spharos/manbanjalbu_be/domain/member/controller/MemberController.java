@@ -3,6 +3,8 @@ package com.spharos.manbanjalbu_be.domain.member.controller;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.EmailVerificationConfirmRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.EmailVerificationSendRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.FindLoginIdRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberMarketingConsentUpdateRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberPasswordChangeRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberJoinRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberLoginRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationConfirmRequest;
@@ -10,6 +12,10 @@ import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationSen
 import com.spharos.manbanjalbu_be.domain.member.dto.request.TermsAgreementRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.ResetPasswordRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.FindLoginIdResponse;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.MarketingConsentResponse;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberWithdrawResponse;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberPersonalInfoResponse;
+import com.spharos.manbanjalbu_be.domain.member.dto.response.MypageSummaryResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.ResetPasswordResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.LoginIdCheckResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberJoinCompleteResponse;
@@ -24,12 +30,18 @@ import com.spharos.manbanjalbu_be.domain.member.service.MemberFindIdService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberFindPasswordService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberJoinService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberLoginService;
+import com.spharos.manbanjalbu_be.domain.member.service.MemberMypageService;
+import com.spharos.manbanjalbu_be.domain.member.service.MemberProfileService;
 import com.spharos.manbanjalbu_be.domain.member.service.MemberTermsService;
 import com.spharos.manbanjalbu_be.global.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,10 +50,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "Member", description = "회원가입 / 로그인 API")
+@Tag(name = "Member", description = "회원가입 / 로그인 / 마이페이지 API")
 @RestController
 @RequestMapping("/api/member")
 public class MemberController {
+
+	private static final String BEARER_AUTH = "BearerAuth";
 
 	private final MemberAuthService memberAuthService;
 	private final MemberTermsService memberTermsService;
@@ -49,6 +63,8 @@ public class MemberController {
 	private final MemberLoginService memberLoginService;
 	private final MemberFindIdService memberFindIdService;
 	private final MemberFindPasswordService memberFindPasswordService;
+	private final MemberMypageService memberMypageService;
+	private final MemberProfileService memberProfileService;
 
 	public MemberController(
 			MemberAuthService memberAuthService,
@@ -56,7 +72,9 @@ public class MemberController {
 			MemberJoinService memberJoinService,
 			MemberLoginService memberLoginService,
 			MemberFindIdService memberFindIdService,
-			MemberFindPasswordService memberFindPasswordService
+			MemberFindPasswordService memberFindPasswordService,
+			MemberMypageService memberMypageService,
+			MemberProfileService memberProfileService
 	) {
 		this.memberAuthService = memberAuthService;
 		this.memberTermsService = memberTermsService;
@@ -64,6 +82,96 @@ public class MemberController {
 		this.memberLoginService = memberLoginService;
 		this.memberFindIdService = memberFindIdService;
 		this.memberFindPasswordService = memberFindPasswordService;
+		this.memberMypageService = memberMypageService;
+		this.memberProfileService = memberProfileService;
+	}
+
+	@Operation(
+			summary = "개인정보 관리 - 본인 정보 조회",
+			description = """
+					마이페이지 > 개인정보 관리 화면에 표시할 회원 정보를 반환합니다.
+					JWT(Bearer) 로그인 필수.
+
+					| 필드 | 설명 |
+					|------|------|
+					| loginId | 아이디 (읽기 전용) |
+					| name | 이름 |
+					| birthDate | 생년월일 |
+					| phone | 휴대폰 번호 |
+					| email | 이메일 |
+					| marketingConsent | [선택] 마케팅 활용 수집·이용 동의 및 E-mail/SMS 수신 동의 |
+
+					비밀번호는 보안상 응답에 포함하지 않습니다. 변경은 PATCH /profile/password 사용.
+					""",
+			security = @SecurityRequirement(name = BEARER_AUTH)
+	)
+	@GetMapping("/profile")
+	public ResponseEntity<ApiResponse<MemberPersonalInfoResponse>> getPersonalInfo(
+			@AuthenticationPrincipal Long memberId
+	) {
+		return ResponseEntity.ok(ApiResponse.ok(memberProfileService.getPersonalInfo(memberId)));
+	}
+
+	@Operation(
+			summary = "개인정보 관리 - 비밀번호 변경",
+			description = "현재 비밀번호 확인 후 새 비밀번호로 변경합니다. JWT(Bearer) 로그인 필수.",
+			security = @SecurityRequirement(name = BEARER_AUTH)
+	)
+	@PatchMapping("/profile/password")
+	public ResponseEntity<ApiResponse<Void>> changePassword(
+			@AuthenticationPrincipal Long memberId,
+			@Valid @RequestBody MemberPasswordChangeRequest request
+	) {
+		memberProfileService.changePassword(memberId, request);
+		return ResponseEntity.ok(ApiResponse.ok(null, "비밀번호가 변경되었습니다."));
+	}
+
+	@Operation(
+			summary = "개인정보 관리 - 마케팅 수신 동의 변경",
+			description = """
+					[선택] 마케팅 활용 수집·이용 동의 및 E-mail/SMS 광고성 정보 수신 동의를 변경합니다.
+					- marketingUtilizationAgreed=false 이면 emailAgreed, smsAgreed 모두 false 여야 합니다.
+					- marketingUtilizationAgreed=true 이면 emailAgreed, smsAgreed 중 하나 이상 true 여야 합니다.
+					""",
+			security = @SecurityRequirement(name = BEARER_AUTH)
+	)
+	@PatchMapping("/profile/marketing-consent")
+	public ResponseEntity<ApiResponse<MarketingConsentResponse>> updateMarketingConsent(
+			@AuthenticationPrincipal Long memberId,
+			@Valid @RequestBody MemberMarketingConsentUpdateRequest request
+	) {
+		return ResponseEntity.ok(
+				ApiResponse.ok(memberProfileService.updateMarketingConsent(memberId, request))
+		);
+	}
+
+	@Operation(
+			summary = "회원 탈퇴",
+			description = "로그인 회원 계정을 소프트 딜리트(WITHDRAWN) 처리합니다. JWT(Bearer) 로그인 필수.",
+			security = @SecurityRequirement(name = BEARER_AUTH)
+	)
+	@PostMapping("/withdraw")
+	public ResponseEntity<ApiResponse<MemberWithdrawResponse>> withdraw(
+			@AuthenticationPrincipal Long memberId
+	) {
+		return ResponseEntity.ok(ApiResponse.ok(memberProfileService.withdraw(memberId)));
+	}
+
+	@Operation(
+			summary = "마이페이지 요약",
+			description = """
+					로그인 회원의 이름과 쇼핑정보·결제수단 요약을 반환합니다.
+					- name: 회원 프로필 이름
+					- shoppingInfo / paymentMethods: DB 실데이터 기준 count·summary
+					- 데이터가 없으면 count=0, summary=null
+					""",
+			security = @SecurityRequirement(name = BEARER_AUTH)
+	)
+	@GetMapping("/mypage")
+	public ResponseEntity<ApiResponse<MypageSummaryResponse>> getMypageSummary(
+			@AuthenticationPrincipal Long memberId
+	) {
+		return ResponseEntity.ok(ApiResponse.ok(memberMypageService.getSummary(memberId)));
 	}
 
 	@Operation(summary = "1. 이메일 인증번호 발송", description = """

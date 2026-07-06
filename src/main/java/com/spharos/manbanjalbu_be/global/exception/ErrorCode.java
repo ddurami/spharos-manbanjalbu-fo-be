@@ -22,6 +22,8 @@ public enum ErrorCode {
 	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원 정보를 찾을 수 없습니다."),
 	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
 	MEMBER_INACTIVE(HttpStatus.FORBIDDEN, "활성화되지 않은 회원입니다."),
+	MEMBER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "이미 탈퇴한 회원입니다."),
+	INVALID_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다."),
 	EMAIL_CONFIG_INVALID(HttpStatus.BAD_REQUEST, "메일 발송 설정이 올바르지 않습니다. application-local.yaml 을 확인해주세요."),
 	EMAIL_AUTHENTICATION_FAILED(HttpStatus.BAD_REQUEST, "Gmail SMTP 인증에 실패했습니다. Gmail 앱 비밀번호를 사용했는지 확인해주세요."),
 	EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패했습니다."),

@@ -46,6 +46,12 @@ public class MemberProfile {
 	@Column(name = "birth_date", nullable = false)
 	private LocalDate birthDate;
 
+	@Column(name = "marketing_email_agreed", nullable = false)
+	private Boolean marketingEmailAgreed = false;
+
+	@Column(name = "marketing_sms_agreed", nullable = false)
+	private Boolean marketingSmsAgreed = false;
+
 	@UpdateTimestamp
 	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
@@ -66,5 +72,10 @@ public class MemberProfile {
 		profile.phone = phone;
 		profile.birthDate = birthDate;
 		return profile;
+	}
+
+	public void updateMarketingConsent(boolean emailAgreed, boolean smsAgreed) {
+		this.marketingEmailAgreed = emailAgreed;
+		this.marketingSmsAgreed = smsAgreed;
 	}
 }

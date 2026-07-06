@@ -27,6 +27,10 @@ public class SwaggerConfig {
 								6. POST /api/member/join (회원 정보 입력, marketingConsent 확인)
 								7. POST /api/member/login
 
+								마이페이지 (JWT 필요, Authorize 후 호출)
+								- GET /api/member/mypage : 마이페이지 요약 (이름 + 쇼핑/결제 요약)
+								- GET /api/member/profile : 개인정보 관리 (본인 프로필 상세)
+
 								FO-FE 연동: CORS http://localhost:3000 허용, 응답 형식 ApiResponse { success, data, message }
 
 								보조: GET /api/member/join/session?verificationToken=...

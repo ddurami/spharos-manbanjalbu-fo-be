@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Entity
-@Table(name = "signup_session")
+@Table(name = "signup_session", comment = "회원가입/비밀번호찾기 세션")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SignupSession {
