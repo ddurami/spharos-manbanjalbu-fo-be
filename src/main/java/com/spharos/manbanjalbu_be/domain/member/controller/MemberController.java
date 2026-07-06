@@ -5,6 +5,7 @@ import com.spharos.manbanjalbu_be.domain.member.dto.request.EmailVerificationSen
 import com.spharos.manbanjalbu_be.domain.member.dto.request.FindLoginIdRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberMarketingConsentUpdateRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberPasswordChangeRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberWithdrawRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberJoinRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberLoginRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.PhoneVerificationConfirmRequest;
@@ -147,14 +148,24 @@ public class MemberController {
 
 	@Operation(
 			summary = "회원 탈퇴",
-			description = "로그인 회원 계정을 소프트 딜리트(WITHDRAWN) 처리합니다. JWT(Bearer) 로그인 필수.",
+			description = """
+					로그인 회원 계정을 소프트 딜리트(WITHDRAWN) 처리합니다. JWT(Bearer) 로그인 필수.
+
+					사전 인증 절차:
+					1) POST /api/member/auth/email/send → /auth/email/verify (또는 phone/send → phone/verify)
+					2) verify 응답의 verificationToken 과 로그인 회원의 이메일/휴대폰번호 일치 여부 확인
+					3) 본 API 호출
+
+					인증한 이메일 또는 휴대폰번호가 로그인 회원 정보와 일치해야 탈퇴가 처리됩니다.
+					""",
 			security = @SecurityRequirement(name = BEARER_AUTH)
 	)
 	@PostMapping("/withdraw")
 	public ResponseEntity<ApiResponse<MemberWithdrawResponse>> withdraw(
-			@AuthenticationPrincipal Long memberId
+			@AuthenticationPrincipal Long memberId,
+			@Valid @RequestBody MemberWithdrawRequest request
 	) {
-		return ResponseEntity.ok(ApiResponse.ok(memberProfileService.withdraw(memberId)));
+		return ResponseEntity.ok(ApiResponse.ok(memberProfileService.withdraw(memberId, request)));
 	}
 
 	@Operation(

@@ -2,16 +2,19 @@ package com.spharos.manbanjalbu_be.domain.member.service;
 
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberMarketingConsentUpdateRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberPasswordChangeRequest;
+import com.spharos.manbanjalbu_be.domain.member.dto.request.MemberWithdrawRequest;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MarketingConsentResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberPersonalInfoResponse;
 import com.spharos.manbanjalbu_be.domain.member.dto.response.MemberWithdrawResponse;
 import com.spharos.manbanjalbu_be.domain.member.entity.Member;
 import com.spharos.manbanjalbu_be.domain.member.entity.MemberProfile;
 import com.spharos.manbanjalbu_be.domain.member.entity.MemberTermsAgreement;
+import com.spharos.manbanjalbu_be.domain.member.entity.SignupSession;
 import com.spharos.manbanjalbu_be.domain.member.entity.Terms;
 import com.spharos.manbanjalbu_be.domain.member.enums.MemberStatus;
 import com.spharos.manbanjalbu_be.domain.member.repository.MemberRepository;
 import com.spharos.manbanjalbu_be.domain.member.repository.MemberTermsAgreementRepository;
+import com.spharos.manbanjalbu_be.domain.member.repository.SignupSessionRepository;
 import com.spharos.manbanjalbu_be.domain.member.repository.TermsRepository;
 import com.spharos.manbanjalbu_be.global.exception.BusinessException;
 import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
@@ -26,17 +29,23 @@ public class MemberProfileService {
 	private final MemberRepository memberRepository;
 	private final MemberTermsAgreementRepository memberTermsAgreementRepository;
 	private final TermsRepository termsRepository;
+	private final SignupSessionRepository signupSessionRepository;
+	private final MemberVerifiedSessionService memberVerifiedSessionService;
 	private final PasswordEncoder passwordEncoder;
 
 	public MemberProfileService(
 			MemberRepository memberRepository,
 			MemberTermsAgreementRepository memberTermsAgreementRepository,
 			TermsRepository termsRepository,
+			SignupSessionRepository signupSessionRepository,
+			MemberVerifiedSessionService memberVerifiedSessionService,
 			PasswordEncoder passwordEncoder
 	) {
 		this.memberRepository = memberRepository;
 		this.memberTermsAgreementRepository = memberTermsAgreementRepository;
 		this.termsRepository = termsRepository;
+		this.signupSessionRepository = signupSessionRepository;
+		this.memberVerifiedSessionService = memberVerifiedSessionService;
 		this.passwordEncoder = passwordEncoder;
 	}
 
@@ -109,15 +118,13 @@ public class MemberProfileService {
 		return buildMarketingConsent(member, profile);
 	}
 
-	public MemberWithdrawResponse withdraw(Long memberId) {
-		Member member = memberRepository.findById(memberId)
-				.orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-
-		if (member.getStatus() == MemberStatus.WITHDRAWN) {
-			throw new BusinessException(ErrorCode.MEMBER_ALREADY_WITHDRAWN);
-		}
+	public MemberWithdrawResponse withdraw(Long memberId, MemberWithdrawRequest request) {
+		Member member = getActiveMember(memberId);
+		SignupSession session = memberVerifiedSessionService.getIdentityVerifiedSession(request.verificationToken());
+		memberVerifiedSessionService.validateSessionMatchesMember(session, member);
 
 		member.withdraw();
+		signupSessionRepository.delete(session);
 
 		return new MemberWithdrawResponse(
 				member.getLoginId(),
