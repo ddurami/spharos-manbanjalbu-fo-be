@@ -86,6 +86,25 @@ public class MemberVerifiedSessionService {
 		return member;
 	}
 
+	public void validateSessionMatchesMember(SignupSession session, Member member) {
+		MemberProfile profile = member.getProfile();
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+		}
+
+		boolean matched = switch (session.getAuthMethod()) {
+			case EMAIL -> session.getVerifiedValue().equals(profile.getEmail());
+			case PASS -> normalizePhone(session.getVerifiedValue()).equals(profile.getPhone());
+		};
+
+		if (!matched) {
+			throw new BusinessException(
+					ErrorCode.INVALID_INPUT,
+					"인증한 이메일 또는 휴대폰번호가 로그인 회원 정보와 일치하지 않습니다."
+			);
+		}
+	}
+
 	private String normalizePhone(String phone) {
 		return phone.replaceAll("[^0-9]", "");
 	}
