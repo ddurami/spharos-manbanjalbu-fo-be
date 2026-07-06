@@ -31,7 +31,7 @@ public class ProductController {
 	}
 
 	@GetMapping
-	@Operation(summary = "상품 목록 조회", description = "필터, 검색어, 정렬, 페이징을 지원하는 통합 상품 목록 API")
+	@Operation(summary = "상품 목록 조회", description = "필터, 검색어(name/short_description), 정렬, 페이징을 지원하는 통합 상품 목록 API")
 	public ResponseEntity<ApiResponse<ProductListResponse>> getProducts(
 			@RequestParam(required = false) List<Long> categoryIds,
 			@RequestParam(required = false) Long seasonId,
