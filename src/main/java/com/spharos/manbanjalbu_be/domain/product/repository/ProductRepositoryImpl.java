@@ -40,8 +40,11 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 		List<Object[]> params = new ArrayList<>();
 
 		if (keyword != null && !keyword.isBlank()) {
-			where.append("AND MATCH(p.name) AGAINST(?").append(params.size() + 1).append(" IN BOOLEAN MODE) ");
-			params.add(new Object[]{params.size() + 1, keyword});
+			String likeKeyword = "%" + keyword.trim() + "%";
+			where.append("AND (p.name LIKE ?").append(params.size() + 1);
+			params.add(new Object[]{params.size() + 1, likeKeyword});
+			where.append(" OR p.short_description LIKE ?").append(params.size() + 1).append(") ");
+			params.add(new Object[]{params.size() + 1, likeKeyword});
 		}
 
 		if (categoryIds != null && !categoryIds.isEmpty()) {
@@ -112,11 +115,13 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<Long> findCategoryIdsByKeyword(String keyword) {
+		String likeKeyword = "%" + keyword.trim() + "%";
 		String sql = "SELECT DISTINCT p.category_id FROM product p "
 				+ "WHERE p.status = 'ON_SALE' "
-				+ "AND MATCH(p.name) AGAINST(?1 IN BOOLEAN MODE)";
+				+ "AND (p.name LIKE ?1 OR p.short_description LIKE ?2)";
 		Query query = entityManager.createNativeQuery(sql);
-		query.setParameter(1, keyword);
+		query.setParameter(1, likeKeyword);
+		query.setParameter(2, likeKeyword);
 		return query.getResultList();
 	}
 }

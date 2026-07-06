@@ -39,7 +39,8 @@ public enum ErrorCode {
 
 	PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
 	PRODUCT_NOT_ON_SALE(HttpStatus.BAD_REQUEST, "현재 판매 중이 아닌 상품입니다."),
-	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
+	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
+	SEARCH_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "검색 기록을 찾을 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String message;
