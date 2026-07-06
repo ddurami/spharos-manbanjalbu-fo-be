@@ -120,6 +120,10 @@ public class MemberJoinService {
 				session.getTermAgreements()
 		);
 
+		if (marketingConsent.agreed()) {
+			profile.updateMarketingConsent(true, true);
+		}
+
 		Member savedMember = memberRepository.save(member);
 		signupSessionRepository.delete(session);
 

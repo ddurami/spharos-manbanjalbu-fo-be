@@ -57,4 +57,8 @@ public class MemberTermsAgreement {
 		agreement.isAgreed = isAgreed;
 		return agreement;
 	}
+
+	public void updateAgreed(boolean isAgreed) {
+		this.isAgreed = isAgreed;
+	}
 }

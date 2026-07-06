@@ -103,4 +103,8 @@ public class Member {
 	public void changePassword(String encodedPassword) {
 		this.password = encodedPassword;
 	}
+
+	public void withdraw() {
+		this.status = MemberStatus.WITHDRAWN;
+	}
 }
