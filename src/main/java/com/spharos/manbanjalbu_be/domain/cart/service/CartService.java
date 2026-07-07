@@ -33,6 +33,8 @@ public class CartService {
 
 	private static final int MAX_CART_ITEM_TYPES = 20;
 	private static final int MAX_QUANTITY_PER_PRODUCT = 20;
+	private static final int FREE_SHIPPING_THRESHOLD = 30000;
+	private static final int SHIPPING_FEE = 3000;
 
 	private final CartItemRepository cartItemRepository;
 	private final CartHistoryRepository cartHistoryRepository;
@@ -47,6 +49,11 @@ public class CartService {
 		this.cartHistoryRepository = cartHistoryRepository;
 		this.memberRepository = memberRepository;
 		this.productRepository = productRepository;
+	}
+
+	@Transactional(readOnly = true)
+	public int getCartItemCount(Long memberId) {
+		return cartItemRepository.countByMemberId(memberId);
 	}
 
 	@Transactional(readOnly = true)
@@ -94,7 +101,10 @@ public class CartService {
 				.mapToInt(item -> item.price() * item.quantity())
 				.sum();
 
-		return new CartCheckoutResponse(cartItemResponses, productAmount, 0, 0, productAmount);
+		int shippingFee = productAmount < FREE_SHIPPING_THRESHOLD ? SHIPPING_FEE : 0;
+		int totalAmount = productAmount + shippingFee;
+
+		return new CartCheckoutResponse(cartItemResponses, productAmount, 0, shippingFee, totalAmount);
 	}
 
 	public void addCartItem(Long memberId, CartAddRequest request) {
