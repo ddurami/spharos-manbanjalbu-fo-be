@@ -34,6 +34,8 @@ bin/
 .vscode/
 
 ### Local / Secret config ###
+src/main/resources/application-local.yaml
+src/main/resources/application-local.yml
 application-local.yaml
 application-local.yml
 .env
@@ -42,6 +44,13 @@ application-local.yml
 ### Logs ###
 logs/
 *.log
+
+### Docker (로컬 개발 전용) ###
+Dockerfile.dev
+.dockerignore
+
+### SQL 스크립트 (로컬 테스트 전용) ###
+sql/
 
 ### OS ###
 .DS_Store

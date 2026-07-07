@@ -1,0 +1,38 @@
+# 이 파일을 복사해서 application-local.yaml 로 저장한 뒤 값을 채워주세요.
+# application-local.yaml 은 .gitignore 에 등록되어 GitHub 에 올라가지 않습니다.
+#
+# cp src/main/resources/application-local.example.yaml src/main/resources/application-local.yaml
+#
+# === MySQL (Docker) ===
+# docker compose up -d
+# 기본 root 비밀번호: root (docker-compose.yml 참고)
+#
+# === 실제 인증 (배포/실연동) ===
+# Octomo MO 인증: 서버가 문자를 보내지 않습니다.
+#   1) send API → 화면에 authCode + 수신번호(1666-3538) 표시
+#   2) 사용자가 본인 휴대폰으로 1666-3538 에 authCode 만 문자 발송
+#   3) verify API → Octomo API로 수신 여부 확인
+#
+# Gmail: 2단계 인증 + 앱 비밀번호 16자리 → spring.mail.password
+
+spring:
+  datasource:
+    password: root
+
+  mail:
+    username: your@gmail.com
+    password: your-gmail-app-password-16digits
+
+member:
+  verification:
+    expose-dev-code: true
+
+mail:
+  verification:
+    mock-enabled: true
+    from: local@test.com
+
+octomo:
+  mock-enabled: false
+  api-key: your-octomo-api-key
+  receive-phone-number: 1666-3538

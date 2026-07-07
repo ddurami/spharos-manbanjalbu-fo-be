@@ -1,0 +1,24 @@
+# 배포(production) 프로필 — 환경변수로 민감값 주입
+# 실행: SPRING_PROFILES_ACTIVE=prod
+
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+member:
+  verification:
+    expose-dev-code: false
+
+mail:
+  verification:
+    mock-enabled: false
+
+octomo:
+  mock-enabled: false
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    org.springframework.security: warn
