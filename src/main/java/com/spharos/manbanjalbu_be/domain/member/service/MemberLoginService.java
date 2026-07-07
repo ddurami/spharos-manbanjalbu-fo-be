@@ -34,6 +34,9 @@ public class MemberLoginService {
 		Member member = memberRepository.findByLoginId(request.loginId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
+		if (member.getStatus() == MemberStatus.WITHDRAWN) {
+			throw new BusinessException(ErrorCode.MEMBER_ALREADY_WITHDRAWN);
+		}
 		if (member.getStatus() != MemberStatus.ACTIVE) {
 			throw new BusinessException(ErrorCode.MEMBER_INACTIVE);
 		}
