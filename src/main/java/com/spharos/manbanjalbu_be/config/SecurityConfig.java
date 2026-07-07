@@ -46,7 +46,7 @@ public class SecurityConfig {
 						.requestMatchers("/api/member/find-id").permitAll()
 						.requestMatchers("/api/member/find-password/**").permitAll()
 						.requestMatchers("/api/search/recommended-keywords").permitAll()
-						.requestMatchers("/api/products/**", "/api/products", "/api/categories/**", "/api/categories", "/api/seasons/**", "/api/seasons").permitAll()
+						.requestMatchers("/api/products/**", "/api/products", "/api/categories/**", "/api/categories", "/api/seasons/**", "/api/seasons", "/api/banners/**", "/api/banners").permitAll()
 						.requestMatchers(
 								"/swagger-ui.html",
 								"/swagger-ui/**",

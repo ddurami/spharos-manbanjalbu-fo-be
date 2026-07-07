@@ -8,6 +8,8 @@ public record CategoryResponse(
 		Long id,
 		String name,
 		int displayOrder,
+		String imageUrl,
+		boolean hasCapacityFilter,
 		List<SubCategoryResponse> subcategories
 ) {
 
@@ -20,6 +22,8 @@ public record CategoryResponse(
 				category.getId(),
 				category.getName(),
 				category.getDisplayOrder(),
+				category.getImageUrl(),
+				category.isHasCapacityFilter(),
 				subs
 		);
 	}

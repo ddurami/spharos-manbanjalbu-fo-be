@@ -29,7 +29,8 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 			String sort,
 			Pageable pageable) {
 
-		boolean useSalesSort = "sales".equals(sort);
+		String normalizedSort = sort != null ? sort.toLowerCase() : "newest";
+		boolean useSalesSort = "sales".equals(normalizedSort) || "best".equals(normalizedSort) || "recommend".equals(normalizedSort);
 
 		StringBuilder from = new StringBuilder("FROM product p ");
 		if (useSalesSort) {
@@ -40,11 +41,9 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 		List<Object[]> params = new ArrayList<>();
 
 		if (keyword != null && !keyword.isBlank()) {
-			String likeKeyword = "%" + keyword.trim() + "%";
-			where.append("AND (p.name LIKE ?").append(params.size() + 1);
-			params.add(new Object[]{params.size() + 1, likeKeyword});
-			where.append(" OR p.short_description LIKE ?").append(params.size() + 1).append(") ");
-			params.add(new Object[]{params.size() + 1, likeKeyword});
+			String searchKeyword = keyword.trim();
+			where.append("AND MATCH(p.name) AGAINST(?").append(params.size() + 1).append(" IN BOOLEAN MODE) ");
+			params.add(new Object[]{params.size() + 1, searchKeyword});
 		}
 
 		if (categoryIds != null && !categoryIds.isEmpty()) {
@@ -82,8 +81,8 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 			where.append(") ");
 		}
 
-		String orderBy = switch (sort != null ? sort : "newest") {
-			case "sales" -> "ORDER BY COALESCE(pss.total_sales_count, 0) DESC, p.created_at DESC ";
+		String orderBy = switch (normalizedSort) {
+			case "sales", "best", "recommend" -> "ORDER BY COALESCE(pss.total_sales_count, 0) DESC, p.created_at DESC ";
 			case "price_asc" -> "ORDER BY p.price ASC, p.created_at DESC ";
 			case "price_desc" -> "ORDER BY p.price DESC, p.created_at DESC ";
 			default -> "ORDER BY p.created_at DESC ";
@@ -115,13 +114,12 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<Long> findCategoryIdsByKeyword(String keyword) {
-		String likeKeyword = "%" + keyword.trim() + "%";
+		String searchKeyword = keyword.trim();
 		String sql = "SELECT DISTINCT p.category_id FROM product p "
 				+ "WHERE p.status = 'ON_SALE' "
-				+ "AND (p.name LIKE ?1 OR p.short_description LIKE ?2)";
+				+ "AND MATCH(p.name) AGAINST(?1 IN BOOLEAN MODE)";
 		Query query = entityManager.createNativeQuery(sql);
-		query.setParameter(1, likeKeyword);
-		query.setParameter(2, likeKeyword);
+		query.setParameter(1, searchKeyword);
 		return query.getResultList();
 	}
 }

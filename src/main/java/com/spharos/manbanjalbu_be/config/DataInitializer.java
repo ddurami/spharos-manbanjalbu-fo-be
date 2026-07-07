@@ -44,12 +44,14 @@ public class DataInitializer {
 	@Bean
 	CommandLineRunner initRecommendedKeywords(RecommendedKeywordRepository recommendedKeywordRepository) {
 		return args -> {
-			saveKeywordIfAbsent(recommendedKeywordRepository, "스탠리", "스테인리스", 1);
-			saveKeywordIfAbsent(recommendedKeywordRepository, "양우산", "우산", 2);
-			saveKeywordIfAbsent(recommendedKeywordRepository, "키체인", "키링", 3);
-			saveKeywordIfAbsent(recommendedKeywordRepository, "베어리스타", "사이렌", 4);
-			saveKeywordIfAbsent(recommendedKeywordRepository, "BEST 선물", "선물", 5);
-			saveKeywordIfAbsent(recommendedKeywordRepository, "디저트 세트", "세트", 6);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "스탠리", "스탠리", 1);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "양우산", "양우산", 2);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "키체인", "키체인", 3);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "베어리스타", "베어리스타", 4);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "BEST 선물", "BEST 선물", 5);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "디저트 세트", "디저트 세트", 6);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "콜드브루", "콜드브루", 7);
+			saveKeywordIfAbsent(recommendedKeywordRepository, "텀블러", "텀블러", 8);
 		};
 	}
 
