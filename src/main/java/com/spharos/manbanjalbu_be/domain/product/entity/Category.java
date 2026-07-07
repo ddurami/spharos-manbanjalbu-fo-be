@@ -53,4 +53,10 @@ public class Category {
 
 	@Column(name = "display_order")
 	private int displayOrder = 0;
+
+	@Column(name = "image_url", length = 500)
+	private String imageUrl;
+
+	@Column(name = "has_capacity_filter", nullable = false)
+	private boolean hasCapacityFilter = false;
 }

@@ -21,6 +21,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -96,5 +97,6 @@ public class Product {
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("displayOrder ASC")
+	@BatchSize(size = 100)
 	private List<ProductMedia> mediaList = new ArrayList<>();
 }

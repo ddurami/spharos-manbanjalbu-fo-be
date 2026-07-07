@@ -13,7 +13,6 @@ import com.spharos.manbanjalbu_be.domain.product.repository.SeasonRepository;
 import com.spharos.manbanjalbu_be.global.exception.BusinessException;
 import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,19 +89,22 @@ public class ProductService {
 
 	public List<MainProductGroupResponse> getMainPageProducts() {
 		List<Season> recentSeasons = seasonRepository.findTop5ByOrderByCreatedAtDesc();
+		if (recentSeasons.isEmpty()) {
+			return List.of();
+		}
+
+		List<Long> seasonIds = recentSeasons.stream().map(Season::getId).toList();
+		List<Product> allProducts = productRepository.findBySeasonIdsAndStatus(seasonIds, ProductStatus.ON_SALE);
 
 		List<MainProductGroupResponse> groups = new ArrayList<>();
-		Pageable limit = PageRequest.of(0, MAIN_PRODUCT_PER_SEASON);
-
 		for (Season season : recentSeasons) {
-			List<Product> products = productRepository
-					.findBySeasonIdAndStatusOrderByCreatedAtDesc(season.getId(), ProductStatus.ON_SALE, limit);
+			List<ProductSummaryResponse> summaries = allProducts.stream()
+					.filter(p -> p.getSeason().getId().equals(season.getId()))
+					.limit(MAIN_PRODUCT_PER_SEASON)
+					.map(ProductSummaryResponse::from)
+					.toList();
 
-			if (!products.isEmpty()) {
-				List<ProductSummaryResponse> summaries = products.stream()
-						.map(ProductSummaryResponse::from)
-						.toList();
-
+			if (!summaries.isEmpty()) {
 				groups.add(new MainProductGroupResponse(
 						season.getId(),
 						season.getName(),
