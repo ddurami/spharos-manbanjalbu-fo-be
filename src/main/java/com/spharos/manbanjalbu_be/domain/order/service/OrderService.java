@@ -30,6 +30,7 @@ import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -77,11 +78,20 @@ public class OrderService {
 
 		OrderType orderType = resolveOrderType(request.orderType());
 		OrderCategory orderCategory = resolveOrderCategory(request.orderCategory());
+		ReservationOrderSpec reservationOrder = resolveReservationOrder(
+				orderType,
+				request.reservationDeliveryDate()
+		);
+		orderType = reservationOrder.orderType();
 
 		CartCheckoutResponse checkout = cartService.getCheckoutItems(
 				memberId,
 				new CartDeleteRequest(request.cartItemIds())
 		);
+
+		if (orderType == OrderType.RESERVATION) {
+			validateReservationProducts(checkout.cartItems());
+		}
 
 		Member member = memberRepository.findById(memberId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
@@ -109,6 +119,7 @@ public class OrderService {
 				orderType,
 				orderCategory,
 				resolveDeliveryMemo(request.deliveryMemo(), memberAddress),
+				reservationOrder.reservationDeliveryDate(),
 				OrderCreateFieldSpec.toRecipientSnapshot(memberAddress),
 				amounts,
 				LocalDateTime.now()
@@ -163,6 +174,45 @@ public class OrderService {
 
 	private OrderCategory resolveOrderCategory(OrderCategory orderCategory) {
 		return orderCategory != null ? orderCategory : OrderCreateFieldSpec.DEFAULT_ORDER_CATEGORY;
+	}
+
+	private ReservationOrderSpec resolveReservationOrder(
+			OrderType orderType,
+			LocalDate reservationDeliveryDate
+	) {
+		if (reservationDeliveryDate != null) {
+			validateReservationDateRange(reservationDeliveryDate);
+			return new ReservationOrderSpec(OrderType.RESERVATION, reservationDeliveryDate);
+		}
+
+		if (orderType == OrderType.RESERVATION) {
+			throw new BusinessException(ErrorCode.RESERVATION_DATE_REQUIRED);
+		}
+
+		return new ReservationOrderSpec(orderType, null);
+	}
+
+	private void validateReservationDateRange(LocalDate reservationDeliveryDate) {
+		LocalDate today = LocalDate.now();
+		LocalDate maxDate = today.plusMonths(OrderCreateFieldSpec.RESERVATION_MONTHS_LIMIT);
+
+		if (reservationDeliveryDate.isBefore(today) || reservationDeliveryDate.isAfter(maxDate)) {
+			throw new BusinessException(ErrorCode.INVALID_RESERVATION_DATE);
+		}
+	}
+
+	private void validateReservationProducts(List<CartItemResponse> cartItems) {
+		boolean allAvailable = cartItems.stream().allMatch(CartItemResponse::reservationAvailable);
+
+		if (!allAvailable) {
+			throw new BusinessException(ErrorCode.RESERVATION_NOT_AVAILABLE);
+		}
+	}
+
+	private record ReservationOrderSpec(
+			OrderType orderType,
+			LocalDate reservationDeliveryDate
+	) {
 	}
 
 }

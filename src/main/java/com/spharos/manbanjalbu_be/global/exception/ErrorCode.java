@@ -49,6 +49,9 @@ public enum ErrorCode {
 	ORDER_PAYMENT_METHOD_INVALID(HttpStatus.BAD_REQUEST, "지원하지 않는 결제수단입니다."),
 	ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
 	ORDER_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 주문입니다."),
+	RESERVATION_DATE_REQUIRED(HttpStatus.BAD_REQUEST, "예약 배송일을 선택해 주세요."),
+	INVALID_RESERVATION_DATE(HttpStatus.BAD_REQUEST, "예약 배송일은 오늘부터 3개월 이내로 선택해 주세요."),
+	RESERVATION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "예약 배송이 불가능한 상품입니다."),
 
 	CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "카드를 찾을 수 없습니다."),
 	CARD_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 카드입니다."),

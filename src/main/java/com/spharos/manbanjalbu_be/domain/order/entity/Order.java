@@ -144,6 +144,7 @@ public class Order {
 		order.orderType = command.orderType();
 		order.orderCategory = command.orderCategory();
 		order.deliveryMemo = command.deliveryMemo();
+		order.reservationDeliveryDate = command.reservationDeliveryDate();
 
 		OrderCreateFieldSpec.OrderAmounts amounts = command.amounts();
 		order.amount = amounts.amount();

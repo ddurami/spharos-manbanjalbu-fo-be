@@ -203,6 +203,7 @@ class PaymentRepositoryIntegrationTest {
 				OrderType.DELIVERY,
 				OrderCategory.GENERAL,
 				null,
+				null,
 				OrderCreateFieldSpec.toRecipientSnapshot(address),
 				OrderCreateFieldSpec.calculateMvpAmounts(amount),
 				LocalDateTime.now()

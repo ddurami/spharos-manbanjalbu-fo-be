@@ -102,6 +102,18 @@ public class MockDataInitializer {
 				orderRepository,
 				orderService
 		);
+		ensureLocalDevCardsForMembersWithoutCards(memberRepository, memberPaymentMethodRepository);
+	}
+
+	private static void ensureLocalDevCardsForMembersWithoutCards(
+			MemberRepository memberRepository,
+			MemberPaymentMethodRepository memberPaymentMethodRepository
+	) {
+		for (Member member : memberRepository.findAll()) {
+			if (memberPaymentMethodRepository.findActiveCardsByMemberId(member.getId()).isEmpty()) {
+				createMockCardsIfAbsent(member, memberPaymentMethodRepository);
+			}
+		}
 	}
 
 	private static Member findOrCreateMember(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
@@ -210,6 +222,7 @@ public class MockDataInitializer {
 							address.getId(),
 							PaymentMethod.CARD,
 							"Mock 결제 테스트 주문",
+							null,
 							null,
 							null,
 							null

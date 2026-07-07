@@ -16,11 +16,13 @@ import com.spharos.manbanjalbu_be.domain.member.repository.MemberRepository;
 import com.spharos.manbanjalbu_be.domain.product.entity.Product;
 import com.spharos.manbanjalbu_be.domain.product.enums.ProductStatus;
 import com.spharos.manbanjalbu_be.domain.product.repository.ProductRepository;
+import com.spharos.manbanjalbu_be.domain.product.support.ReservationProductAvailabilityResolver;
 import com.spharos.manbanjalbu_be.global.exception.BusinessException;
 import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,15 +42,18 @@ public class CartService {
 	private final CartHistoryRepository cartHistoryRepository;
 	private final MemberRepository memberRepository;
 	private final ProductRepository productRepository;
+	private final ReservationProductAvailabilityResolver reservationProductAvailabilityResolver;
 
 	public CartService(CartItemRepository cartItemRepository,
 			CartHistoryRepository cartHistoryRepository,
 			MemberRepository memberRepository,
-			ProductRepository productRepository) {
+			ProductRepository productRepository,
+			ReservationProductAvailabilityResolver reservationProductAvailabilityResolver) {
 		this.cartItemRepository = cartItemRepository;
 		this.cartHistoryRepository = cartHistoryRepository;
 		this.memberRepository = memberRepository;
 		this.productRepository = productRepository;
+		this.reservationProductAvailabilityResolver = reservationProductAvailabilityResolver;
 	}
 
 	@Transactional(readOnly = true)
@@ -59,9 +64,13 @@ public class CartService {
 	@Transactional(readOnly = true)
 	public CartListResponse getCartList(Long memberId) {
 		List<CartItem> cartItems = cartItemRepository.findByMemberIdWithProduct(memberId);
+		Map<Long, Boolean> reservationAvailability = resolveReservationAvailability(cartItems);
 
 		List<CartItemResponse> cartItemResponses = cartItems.stream()
-				.map(CartItemResponse::from)
+				.map(cartItem -> CartItemResponse.from(
+						cartItem,
+						reservationAvailability.getOrDefault(cartItem.getProduct().getId(), false)
+				))
 				.toList();
 
 		return new CartListResponse(cartItemResponses, cartItemResponses.size());
@@ -92,9 +101,14 @@ public class CartService {
 			}
 		}
 
+		Map<Long, Boolean> reservationAvailability = resolveReservationAvailability(cartItems);
+
 		List<CartItemResponse> cartItemResponses = requestedIds.stream()
 				.map(cartItemMap::get)
-				.map(CartItemResponse::from)
+				.map(cartItem -> CartItemResponse.from(
+						cartItem,
+						reservationAvailability.getOrDefault(cartItem.getProduct().getId(), false)
+				))
 				.toList();
 
 		int productAmount = cartItemResponses.stream()
@@ -248,5 +262,16 @@ public class CartService {
 		if (quantity > MAX_QUANTITY_PER_PRODUCT) {
 			throw new BusinessException(ErrorCode.CART_QUANTITY_LIMIT_EXCEEDED);
 		}
+	}
+
+	private Map<Long, Boolean> resolveReservationAvailability(List<CartItem> cartItems) {
+		List<Long> productIds = cartItems.stream()
+				.map(cartItem -> cartItem.getProduct().getId())
+				.toList();
+
+		return reservationProductAvailabilityResolver.resolveAvailability(
+				productIds,
+				LocalDateTime.now()
+		);
 	}
 }
