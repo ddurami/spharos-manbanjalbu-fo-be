@@ -145,8 +145,8 @@ public class MemberMypageService {
 		if (!cards.isEmpty()) {
 			MemberPaymentMethod first = cards.get(0);
 			summary = count > 1
-					? first.getProviderName() + " 외 " + (count - 1) + "건"
-					: first.getProviderName() + " " + first.getMaskedNumber();
+					? first.getCardName() + " 외 " + (count - 1) + "건"
+					: first.getDisplayLabel();
 		}
 		return toInfoItem(count, summary);
 	}
@@ -160,7 +160,7 @@ public class MemberMypageService {
 		long count = accounts.size();
 		String summary = accounts.isEmpty()
 				? null
-				: accounts.get(0).getProviderName() + " " + accounts.get(0).getMaskedNumber();
+				: accounts.get(0).getDisplayLabel();
 		return toInfoItem(count, summary);
 	}
 

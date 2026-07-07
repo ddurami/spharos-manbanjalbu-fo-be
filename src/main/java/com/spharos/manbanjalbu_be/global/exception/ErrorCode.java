@@ -50,6 +50,17 @@ public enum ErrorCode {
 	ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
 	ORDER_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 주문입니다."),
 
+	CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "카드를 찾을 수 없습니다."),
+	CARD_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 카드입니다."),
+	CARD_EXPIRED(HttpStatus.BAD_REQUEST, "만료된 카드입니다."),
+	CARD_BLOCKED(HttpStatus.BAD_REQUEST, "사용이 제한된 카드입니다."),
+
+	PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 정보를 찾을 수 없습니다."),
+	INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "결제 가능한 상태가 아닙니다."),
+	ALREADY_PAID(HttpStatus.CONFLICT, "이미 결제가 완료된 주문입니다."),
+	PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
+	PAYMENT_GATEWAY_ERROR(HttpStatus.BAD_GATEWAY, "결제 처리 중 오류가 발생했습니다."),
+
 	MEMBER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "쿠폰을 찾을 수 없습니다."),
 	MEMBER_COUPON_EXPIRED(HttpStatus.BAD_REQUEST, "만료된 쿠폰입니다."),
 	MEMBER_COUPON_ALREADY_USED(HttpStatus.BAD_REQUEST, "이미 사용된 쿠폰입니다."),

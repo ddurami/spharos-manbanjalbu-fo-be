@@ -22,6 +22,8 @@ import com.spharos.manbanjalbu_be.domain.order.support.OrderCreateFieldSpec;
 import com.spharos.manbanjalbu_be.domain.order.support.OrderNameGenerator;
 import com.spharos.manbanjalbu_be.domain.order.support.OrderNoGenerator;
 import com.spharos.manbanjalbu_be.domain.order.support.PaymentNoGenerator;
+import com.spharos.manbanjalbu_be.domain.payment.entity.PaymentHistory;
+import com.spharos.manbanjalbu_be.domain.payment.repository.PaymentHistoryRepository;
 import com.spharos.manbanjalbu_be.domain.product.entity.Product;
 import com.spharos.manbanjalbu_be.global.exception.BusinessException;
 import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
@@ -43,6 +45,7 @@ public class OrderService {
 	private final MemberRepository memberRepository;
 	private final MemberAddressRepository memberAddressRepository;
 	private final OrderRepository orderRepository;
+	private final PaymentHistoryRepository paymentHistoryRepository;
 	private final OrderNoGenerator orderNoGenerator;
 	private final PaymentNoGenerator paymentNoGenerator;
 
@@ -52,6 +55,7 @@ public class OrderService {
 			MemberRepository memberRepository,
 			MemberAddressRepository memberAddressRepository,
 			OrderRepository orderRepository,
+			PaymentHistoryRepository paymentHistoryRepository,
 			OrderNoGenerator orderNoGenerator,
 			PaymentNoGenerator paymentNoGenerator
 	) {
@@ -60,10 +64,12 @@ public class OrderService {
 		this.memberRepository = memberRepository;
 		this.memberAddressRepository = memberAddressRepository;
 		this.orderRepository = orderRepository;
+		this.paymentHistoryRepository = paymentHistoryRepository;
 		this.orderNoGenerator = orderNoGenerator;
 		this.paymentNoGenerator = paymentNoGenerator;
 	}
 
+	@Transactional
 	public OrderCreateResponse createOrder(Long memberId, OrderCreateRequest request) {
 		if (memberId == null) {
 			throw new BusinessException(ErrorCode.UNAUTHORIZED);
@@ -124,6 +130,7 @@ public class OrderService {
 		order.registerDelivery();
 
 		Order savedOrder = orderRepository.save(order);
+		paymentHistoryRepository.save(PaymentHistory.recordReady(savedOrder.getPayment(), memberId));
 		cartService.completeCartItemsForOrder(memberId, cartItems, savedOrder.getOrderNo());
 		return OrderCreateResponse.from(savedOrder);
 	}

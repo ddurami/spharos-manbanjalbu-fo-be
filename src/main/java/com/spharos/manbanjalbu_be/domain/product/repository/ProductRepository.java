@@ -12,5 +12,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
 
 	Optional<Product> findByIdAndStatus(Long id, ProductStatus status);
 
+	Optional<Product> findFirstByStatusOrderByIdAsc(ProductStatus status);
+
 	List<Product> findBySeasonIdAndStatusOrderByCreatedAtDesc(Long seasonId, ProductStatus status, Pageable pageable);
 }
