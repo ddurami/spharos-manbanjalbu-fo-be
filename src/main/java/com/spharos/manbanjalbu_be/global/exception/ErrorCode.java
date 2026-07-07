@@ -40,7 +40,20 @@ public enum ErrorCode {
 	PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
 	PRODUCT_NOT_ON_SALE(HttpStatus.BAD_REQUEST, "현재 판매 중이 아닌 상품입니다."),
 	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
-	SEARCH_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "검색 기록을 찾을 수 없습니다.");
+	SEARCH_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "검색 기록을 찾을 수 없습니다."),
+	MEMBER_ADDRESS_NOT_FOUND(HttpStatus.NOT_FOUND, "배송지를 찾을 수 없습니다."),
+	MEMBER_ADDRESS_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 배송지입니다."),
+
+	ORDER_CART_EMPTY(HttpStatus.BAD_REQUEST, "주문할 상품이 없습니다."),
+	ORDER_ADDRESS_REQUIRED(HttpStatus.BAD_REQUEST, "배송지를 선택해 주세요."),
+	ORDER_PAYMENT_METHOD_INVALID(HttpStatus.BAD_REQUEST, "지원하지 않는 결제수단입니다."),
+	ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
+	ORDER_UNAUTHORIZED(HttpStatus.FORBIDDEN, "접근 권한이 없는 주문입니다."),
+
+	MEMBER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "쿠폰을 찾을 수 없습니다."),
+	MEMBER_COUPON_EXPIRED(HttpStatus.BAD_REQUEST, "만료된 쿠폰입니다."),
+	MEMBER_COUPON_ALREADY_USED(HttpStatus.BAD_REQUEST, "이미 사용된 쿠폰입니다."),
+	MEMBER_COUPON_UNAUTHORIZED(HttpStatus.FORBIDDEN, "사용할 수 없는 쿠폰입니다.");
 
 	private final HttpStatus status;
 	private final String message;

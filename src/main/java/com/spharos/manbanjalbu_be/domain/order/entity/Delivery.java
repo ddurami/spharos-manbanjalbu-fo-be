@@ -1,6 +1,7 @@
 package com.spharos.manbanjalbu_be.domain.order.entity;
 
 import com.spharos.manbanjalbu_be.domain.order.enums.DeliveryStatus;
+import com.spharos.manbanjalbu_be.domain.order.support.OrderCreateFieldSpec;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -64,6 +65,13 @@ public class Delivery {
 	@UpdateTimestamp
 	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
+
+	static Delivery create(Order order) {
+		Delivery delivery = new Delivery();
+		delivery.order = order;
+		delivery.deliveryStatus = OrderCreateFieldSpec.INITIAL_DELIVERY_STATUS;
+		return delivery;
+	}
 
 	void assignOrder(Order order) {
 		this.order = order;
