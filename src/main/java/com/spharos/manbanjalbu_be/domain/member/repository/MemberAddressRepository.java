@@ -13,4 +13,6 @@ public interface MemberAddressRepository extends JpaRepository<MemberAddress, Lo
 	Optional<MemberAddress> findFirstByMember_IdAndIsDefaultTrue(Long memberId);
 
 	List<MemberAddress> findByMember_IdOrderByIsDefaultDescCreatedAtDesc(Long memberId);
+
+	Optional<MemberAddress> findByIdAndMember_Id(Long id, Long memberId);
 }

@@ -2,6 +2,7 @@ package com.spharos.manbanjalbu_be.domain.order.entity;
 
 import com.spharos.manbanjalbu_be.domain.order.enums.PaymentMethod;
 import com.spharos.manbanjalbu_be.domain.order.enums.PaymentStatus;
+import com.spharos.manbanjalbu_be.domain.order.support.OrderCreateFieldSpec;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -67,6 +68,16 @@ public class Payment {
 	@UpdateTimestamp
 	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
+
+	static Payment create(Order order, String paymentNo, PaymentMethod method, int amount) {
+		Payment payment = new Payment();
+		payment.order = order;
+		payment.paymentNo = paymentNo;
+		payment.method = method;
+		payment.status = OrderCreateFieldSpec.INITIAL_PAYMENT_STATUS;
+		payment.amount = amount;
+		return payment;
+	}
 
 	void assignOrder(Order order) {
 		this.order = order;

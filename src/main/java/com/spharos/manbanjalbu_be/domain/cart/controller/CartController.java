@@ -3,6 +3,7 @@ package com.spharos.manbanjalbu_be.domain.cart.controller;
 import com.spharos.manbanjalbu_be.domain.cart.dto.request.CartAddRequest;
 import com.spharos.manbanjalbu_be.domain.cart.dto.request.CartDeleteRequest;
 import com.spharos.manbanjalbu_be.domain.cart.dto.request.CartUpdateRequest;
+import com.spharos.manbanjalbu_be.domain.cart.dto.response.CartCheckoutResponse;
 import com.spharos.manbanjalbu_be.domain.cart.dto.response.CartListResponse;
 import com.spharos.manbanjalbu_be.domain.cart.service.CartService;
 import com.spharos.manbanjalbu_be.global.common.ApiResponse;
@@ -46,6 +47,15 @@ public class CartController {
 			@Valid @RequestBody CartAddRequest request) {
 		cartService.addCartItem(memberId, request);
 		return ResponseEntity.ok(ApiResponse.ok(null, "장바구니에 추가되었습니다."));
+	}
+
+	@PostMapping("/checkout")
+	@Operation(summary = "결제 대상 장바구니 조회", description = "선택한 장바구니 상품을 결제 화면용으로 조회합니다.")
+	public ResponseEntity<ApiResponse<CartCheckoutResponse>> getCheckoutItems(
+			@AuthenticationPrincipal Long memberId,
+			@Valid @RequestBody CartDeleteRequest request) {
+		CartCheckoutResponse response = cartService.getCheckoutItems(memberId, request);
+		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
 	@PatchMapping("/{cartItemId}")

@@ -3,6 +3,10 @@
 #
 # cp src/main/resources/application-local.example.yaml src/main/resources/application-local.yaml
 #
+# === MySQL (Docker) ===
+# docker compose up -d
+# 기본 root 비밀번호: root (docker-compose.yml 참고)
+#
 # === 실제 인증 (배포/실연동) ===
 # Octomo MO 인증: 서버가 문자를 보내지 않습니다.
 #   1) send API → 화면에 authCode + 수신번호(1666-3538) 표시
@@ -13,7 +17,7 @@
 
 spring:
   datasource:
-    password: your-mysql-root-password
+    password: root
 
   mail:
     username: your@gmail.com
@@ -21,12 +25,12 @@ spring:
 
 member:
   verification:
-    expose-dev-code: false
+    expose-dev-code: true
 
 mail:
   verification:
-    mock-enabled: false
-    from: your@gmail.com
+    mock-enabled: true
+    from: local@test.com
 
 octomo:
   mock-enabled: false

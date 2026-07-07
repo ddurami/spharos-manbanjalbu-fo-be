@@ -5,6 +5,9 @@ import com.spharos.manbanjalbu_be.domain.member.entity.MemberAddress;
 import com.spharos.manbanjalbu_be.domain.order.enums.OrderCategory;
 import com.spharos.manbanjalbu_be.domain.order.enums.OrderStatus;
 import com.spharos.manbanjalbu_be.domain.order.enums.OrderType;
+import com.spharos.manbanjalbu_be.domain.order.enums.PaymentMethod;
+import com.spharos.manbanjalbu_be.domain.order.support.OrderCreateCommand;
+import com.spharos.manbanjalbu_be.domain.order.support.OrderCreateFieldSpec;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -128,4 +131,44 @@ public class Order {
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderCancel> cancellations = new ArrayList<>();
+
+	public static Order create(OrderCreateCommand command) {
+		Order order = new Order();
+		order.member = command.member();
+		order.memberAddress = command.memberAddress();
+		order.orderNo = command.orderNo();
+		order.orderName = command.orderName();
+		order.orderStatus = OrderCreateFieldSpec.INITIAL_ORDER_STATUS;
+		order.orderType = command.orderType();
+		order.orderCategory = command.orderCategory();
+		order.deliveryMemo = command.deliveryMemo();
+
+		OrderCreateFieldSpec.OrderAmounts amounts = command.amounts();
+		order.amount = amounts.amount();
+		order.deliveryFee = amounts.deliveryFee();
+		order.orderAmount = amounts.orderAmount();
+
+		OrderCreateFieldSpec.RecipientSnapshot recipient = command.recipient();
+		order.recipientName = recipient.recipientName();
+		order.recipientPhone = recipient.recipientPhone();
+		order.recipientZipcode = recipient.recipientZipcode();
+		order.recipientBaseAddress = recipient.recipientBaseAddress();
+		order.recipientDetailAddress = recipient.recipientDetailAddress();
+
+		order.orderAt = command.orderAt();
+		return order;
+	}
+
+	public void addItem(OrderItem item) {
+		items.add(item);
+		item.assignOrder(this);
+	}
+
+	public void registerPayment(String paymentNo, PaymentMethod method, int amount) {
+		this.payment = Payment.create(this, paymentNo, method, amount);
+	}
+
+	public void registerDelivery() {
+		this.delivery = Delivery.create(this);
+	}
 }

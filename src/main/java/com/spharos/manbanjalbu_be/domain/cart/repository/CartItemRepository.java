@@ -22,4 +22,12 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 	Optional<CartItem> findByMemberIdAndProductId(Long memberId, Long productId);
 
 	int countByMemberId(Long memberId);
+
+	@Query("SELECT ci FROM CartItem ci " +
+			"JOIN FETCH ci.product p " +
+			"LEFT JOIN FETCH p.mediaList " +
+			"WHERE ci.member.id = :memberId AND ci.id IN :cartItemIds")
+	List<CartItem> findByMemberIdAndIdInWithProduct(
+			@Param("memberId") Long memberId,
+			@Param("cartItemIds") List<Long> cartItemIds);
 }

@@ -3,6 +3,7 @@ package com.spharos.manbanjalbu_be.domain.cart.service;
 import com.spharos.manbanjalbu_be.domain.cart.dto.request.CartAddRequest;
 import com.spharos.manbanjalbu_be.domain.cart.dto.request.CartDeleteRequest;
 import com.spharos.manbanjalbu_be.domain.cart.dto.request.CartUpdateRequest;
+import com.spharos.manbanjalbu_be.domain.cart.dto.response.CartCheckoutResponse;
 import com.spharos.manbanjalbu_be.domain.cart.dto.response.CartItemResponse;
 import com.spharos.manbanjalbu_be.domain.cart.dto.response.CartListResponse;
 import com.spharos.manbanjalbu_be.domain.cart.entity.CartHistory;
@@ -21,7 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -54,6 +58,43 @@ public class CartService {
 				.toList();
 
 		return new CartListResponse(cartItemResponses, cartItemResponses.size());
+	}
+
+	@Transactional(readOnly = true)
+	public CartCheckoutResponse getCheckoutItems(Long memberId, CartDeleteRequest request) {
+		List<Long> requestedIds = request.cartItemIds();
+		List<CartItem> cartItems = cartItemRepository.findByMemberIdAndIdInWithProduct(
+				memberId, requestedIds);
+
+		if (cartItems.size() != requestedIds.size()) {
+			throw new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND);
+		}
+
+		Map<Long, CartItem> cartItemMap = cartItems.stream()
+				.collect(Collectors.toMap(CartItem::getId, Function.identity()));
+
+		for (Long cartItemId : requestedIds) {
+			CartItem cartItem = cartItemMap.get(cartItemId);
+
+			if (!cartItem.getMember().getId().equals(memberId)) {
+				throw new BusinessException(ErrorCode.CART_ITEM_UNAUTHORIZED);
+			}
+
+			if (cartItem.getProduct().getStatus() != ProductStatus.ON_SALE) {
+				throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
+			}
+		}
+
+		List<CartItemResponse> cartItemResponses = requestedIds.stream()
+				.map(cartItemMap::get)
+				.map(CartItemResponse::from)
+				.toList();
+
+		int productAmount = cartItemResponses.stream()
+				.mapToInt(item -> item.price() * item.quantity())
+				.sum();
+
+		return new CartCheckoutResponse(cartItemResponses, productAmount, 0, 0, productAmount);
 	}
 
 	public void addCartItem(Long memberId, CartAddRequest request) {
@@ -134,6 +175,27 @@ public class CartService {
 					CartActionType.DELETE, cartItem.getQuantity(),
 					cartItem.getQuantity(), 0,
 					null
+			));
+		}
+
+		cartItemRepository.deleteAll(cartItems);
+	}
+
+	public void completeCartItemsForOrder(Long memberId, List<CartItem> cartItems, String orderNo) {
+		for (CartItem cartItem : cartItems) {
+			if (!cartItem.getMember().getId().equals(memberId)) {
+				throw new BusinessException(ErrorCode.CART_ITEM_UNAUTHORIZED);
+			}
+
+			cartHistoryRepository.save(CartHistory.create(
+					cartItem.getMember(),
+					cartItem.getId(),
+					cartItem.getProduct().getId(),
+					CartActionType.ORDER_COMPLETED,
+					cartItem.getQuantity(),
+					cartItem.getQuantity(),
+					0,
+					orderNo
 			));
 		}
 
