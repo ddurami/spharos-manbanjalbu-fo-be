@@ -40,6 +40,14 @@ public class CartController {
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
+	@GetMapping("/count")
+	@Operation(summary = "장바구니 상품 개수 조회", description = "헤더 장바구니 아이콘 뱃지용")
+	public ResponseEntity<ApiResponse<Integer>> getCartItemCount(
+			@AuthenticationPrincipal Long memberId) {
+		int count = cartService.getCartItemCount(memberId);
+		return ResponseEntity.ok(ApiResponse.ok(count));
+	}
+
 	@PostMapping
 	@Operation(summary = "장바구니 추가")
 	public ResponseEntity<ApiResponse<Void>> addCartItem(
