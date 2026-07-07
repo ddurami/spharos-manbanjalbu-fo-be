@@ -7,6 +7,9 @@ import com.spharos.manbanjalbu_be.domain.order.enums.DeliveryStatus;
 import com.spharos.manbanjalbu_be.domain.order.enums.OrderStatus;
 import com.spharos.manbanjalbu_be.domain.order.enums.PaymentStatus;
 import com.spharos.manbanjalbu_be.domain.order.repository.OrderRepository;
+import com.spharos.manbanjalbu_be.domain.payment.entity.PaymentHistory;
+import com.spharos.manbanjalbu_be.domain.payment.enums.PaymentHistoryStatus;
+import com.spharos.manbanjalbu_be.domain.payment.repository.PaymentHistoryRepository;
 import com.spharos.manbanjalbu_be.domain.product.entity.Category;
 import com.spharos.manbanjalbu_be.domain.product.entity.Product;
 import com.spharos.manbanjalbu_be.domain.product.entity.ProductPolicy;
@@ -55,6 +58,9 @@ class OrderCreateIntegrationTest {
 
 	@Autowired
 	private CartHistoryRepository cartHistoryRepository;
+
+	@Autowired
+	private PaymentHistoryRepository paymentHistoryRepository;
 
 	@Test
 	@Transactional
@@ -165,6 +171,13 @@ class OrderCreateIntegrationTest {
 		assertThat(savedOrder.getPayment().getStatus()).isEqualTo(PaymentStatus.READY);
 		assertThat(savedOrder.getPayment().getAmount()).isEqualTo(80_000);
 		assertThat(savedOrder.getDelivery().getDeliveryStatus()).isEqualTo(DeliveryStatus.READY);
+
+		assertThat(paymentHistoryRepository.findByPayment_PaymentIdOrderByCreatedAtAsc(
+				savedOrder.getPayment().getPaymentId()))
+				.hasSize(1)
+				.first()
+				.extracting(PaymentHistory::getHistoryStatus)
+				.isEqualTo(PaymentHistoryStatus.READY);
 
 		mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/cart")
 						.header("Authorization", "Bearer " + accessToken))

@@ -3,15 +3,20 @@ package com.spharos.manbanjalbu_be.domain.order.controller;
 import com.spharos.manbanjalbu_be.domain.order.dto.request.OrderCreateRequest;
 import com.spharos.manbanjalbu_be.domain.order.dto.response.OrderCreateResponse;
 import com.spharos.manbanjalbu_be.domain.order.service.OrderService;
+import com.spharos.manbanjalbu_be.domain.payment.dto.response.PaymentResponse;
+import com.spharos.manbanjalbu_be.domain.payment.service.PaymentService;
 import com.spharos.manbanjalbu_be.global.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,10 +27,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "주문", description = "주문 생성·조회 API")
 public class OrderController {
 
-	private final OrderService orderService;
+	private static final String BEARER_AUTH = "BearerAuth";
 
-	public OrderController(OrderService orderService) {
+	private final OrderService orderService;
+	private final PaymentService paymentService;
+
+	public OrderController(OrderService orderService, PaymentService paymentService) {
 		this.orderService = orderService;
+		this.paymentService = paymentService;
 	}
 
 	@PostMapping
@@ -74,6 +83,19 @@ public class OrderController {
 			@Valid @RequestBody OrderCreateRequest request) {
 		OrderCreateResponse response = orderService.createOrder(memberId, request);
 		return ResponseEntity.ok(ApiResponse.ok(response, "주문이 생성되었습니다."));
+	}
+
+	@GetMapping("/{orderId}/payment")
+	@Operation(
+			summary = "주문 결제 정보 조회",
+			description = "주문 ID로 연결된 Payment 정보를 조회합니다.",
+			security = @SecurityRequirement(name = BEARER_AUTH)
+	)
+	public ResponseEntity<ApiResponse<PaymentResponse>> getOrderPayment(
+			@AuthenticationPrincipal Long memberId,
+			@PathVariable Long orderId
+	) {
+		return ResponseEntity.ok(ApiResponse.ok(paymentService.getPaymentByOrderId(memberId, orderId)));
 	}
 
 }

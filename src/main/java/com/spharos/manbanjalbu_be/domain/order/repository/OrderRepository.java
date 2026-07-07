@@ -13,6 +13,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 	Optional<Order> findByOrderNo(String orderNo);
 
+	Optional<Order> findByOrderNoAndMember_Id(String orderNo, Long memberId);
+
+	Optional<Order> findByIdAndMember_Id(Long id, Long memberId);
+
+	long countByMember_IdAndOrderStatus(Long memberId, OrderStatus orderStatus);
+
 	List<Order> findByMember_IdOrderByOrderAtDesc(Long memberId);
 
 	long countByMember_IdAndOrderStatusNotIn(Long memberId, Collection<OrderStatus> excludedStatuses);
