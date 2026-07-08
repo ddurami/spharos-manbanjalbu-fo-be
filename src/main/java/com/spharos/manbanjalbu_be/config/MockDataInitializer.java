@@ -12,10 +12,15 @@ import com.spharos.manbanjalbu_be.domain.member.repository.MemberAddressReposito
 import com.spharos.manbanjalbu_be.domain.member.repository.MemberPaymentMethodRepository;
 import com.spharos.manbanjalbu_be.domain.member.repository.MemberRepository;
 import com.spharos.manbanjalbu_be.domain.order.dto.request.OrderCreateRequest;
+import com.spharos.manbanjalbu_be.domain.order.dto.response.OrderCreateResponse;
 import com.spharos.manbanjalbu_be.domain.order.enums.OrderStatus;
 import com.spharos.manbanjalbu_be.domain.order.enums.PaymentMethod;
+import com.spharos.manbanjalbu_be.domain.order.enums.PaymentStatus;
 import com.spharos.manbanjalbu_be.domain.order.repository.OrderRepository;
+import com.spharos.manbanjalbu_be.domain.order.repository.PaymentRepository;
 import com.spharos.manbanjalbu_be.domain.order.service.OrderService;
+import com.spharos.manbanjalbu_be.domain.payment.dto.request.PaymentCreateRequest;
+import com.spharos.manbanjalbu_be.domain.payment.service.PaymentService;
 import com.spharos.manbanjalbu_be.domain.product.entity.Product;
 import com.spharos.manbanjalbu_be.domain.product.enums.ProductStatus;
 import com.spharos.manbanjalbu_be.domain.product.repository.ProductRepository;
@@ -44,6 +49,7 @@ public class MockDataInitializer {
 	static final String LOGIN_ID = "payment-test";
 	static final String PASSWORD = "Payment1!";
 	static final String SEED_ADDRESS_NAME = "Mock 결제 테스트";
+	static final String SALES_SEED_ADDRESS_NAME = "Mock 총판매 시드 배송지";
 	static final int TARGET_PENDING_ORDERS = 3;
 
 	private static final List<MockCardSpec> MOCK_CARDS = List.of(
@@ -53,6 +59,7 @@ public class MockDataInitializer {
 	);
 
 	private static final int[] TARGET_ORDER_AMOUNTS = {15_800, 32_000, 55_000};
+	private static final int[] SALES_SEED_AMOUNTS = {15_800, 32_000, 55_000, 78_000, 99_000};
 
 	@Bean
 	CommandLineRunner initMockPaymentData(
@@ -64,19 +71,34 @@ public class MockDataInitializer {
 			CartItemRepository cartItemRepository,
 			OrderRepository orderRepository,
 			OrderService orderService,
+			PaymentService paymentService,
+			PaymentRepository paymentRepository,
 			PasswordEncoder passwordEncoder
 	) {
-		return args -> seedIfAbsent(
-				memberRepository,
-				memberAddressRepository,
-				memberPaymentMethodRepository,
-				productRepository,
-				cartService,
-				cartItemRepository,
-				orderRepository,
-				orderService,
-				passwordEncoder
-		);
+		return args -> {
+			seedIfAbsent(
+					memberRepository,
+					memberAddressRepository,
+					memberPaymentMethodRepository,
+					productRepository,
+					cartService,
+					cartItemRepository,
+					orderRepository,
+					orderService,
+					passwordEncoder
+			);
+			seedPaidSalesIfAbsent(
+					memberRepository,
+					memberAddressRepository,
+					memberPaymentMethodRepository,
+					productRepository,
+					cartService,
+					cartItemRepository,
+					orderService,
+					paymentService,
+					paymentRepository
+			);
+		};
 	}
 
 	static void seedIfAbsent(
@@ -236,6 +258,126 @@ public class MockDataInitializer {
 					targetAmount
 			);
 		}
+	}
+
+	static void seedPaidSalesIfAbsent(
+			MemberRepository memberRepository,
+			MemberAddressRepository memberAddressRepository,
+			MemberPaymentMethodRepository memberPaymentMethodRepository,
+			ProductRepository productRepository,
+			CartService cartService,
+			CartItemRepository cartItemRepository,
+			OrderService orderService,
+			PaymentService paymentService,
+			PaymentRepository paymentRepository
+	) {
+		Optional<Product> productOptional = productRepository.findFirstByStatusOrderByIdAsc(ProductStatus.ON_SALE);
+		if (productOptional.isEmpty()) {
+			log.warn("Mock 총판매금액 시드 생략: ON_SALE 상품이 없습니다.");
+			return;
+		}
+
+		Product product = productOptional.get();
+		int seededCount = 0;
+
+		for (Member member : memberRepository.findAll()) {
+			if (hasPaidOrder(member.getId(), paymentRepository)) {
+				continue;
+			}
+
+			List<MemberPaymentMethod> cards = memberPaymentMethodRepository.findActiveCardsByMemberId(member.getId());
+			if (cards.isEmpty()) {
+				log.warn("Mock 총판매금액 시드 생략: 활성 카드 없음 memberId={}", member.getId());
+				continue;
+			}
+
+			MemberAddress address = findOrCreateSalesSeedAddress(member, memberAddressRepository);
+			int targetAmount = SALES_SEED_AMOUNTS[(int) (member.getId() % SALES_SEED_AMOUNTS.length)];
+			int quantity = calculateQuantity(product.getPrice(), targetAmount);
+
+			cartService.addCartItem(member.getId(), new CartAddRequest(product.getId(), quantity));
+
+			Long cartItemId = cartItemRepository.findByMemberIdAndProductId(member.getId(), product.getId())
+					.orElseThrow(() -> new IllegalStateException("Mock 총판매 시드 장바구니 생성 실패"))
+					.getId();
+
+			OrderCreateResponse order = orderService.createOrder(
+					member.getId(),
+					new OrderCreateRequest(
+							List.of(cartItemId),
+							address.getId(),
+							PaymentMethod.CARD,
+							"Mock 총판매금액 시드 주문",
+							null,
+							null,
+							null,
+							null
+					)
+			);
+
+			paymentService.pay(
+					member.getId(),
+					new PaymentCreateRequest(order.orderNo(), cards.get(0).getId())
+			);
+			seededCount++;
+		}
+
+		if (seededCount > 0) {
+			log.info(
+					"Mock 총판매금액 시드 완료: paidOrderCount={}, totalPaidAmount={}",
+					seededCount,
+					paymentRepository.sumTotalPaidAmount()
+			);
+		}
+	}
+
+	private static boolean hasPaidOrder(Long memberId, PaymentRepository paymentRepository) {
+		return paymentRepository.countByMemberIdAndMethodAndStatus(
+				memberId,
+				PaymentMethod.CARD,
+				PaymentStatus.PAID
+		) > 0;
+	}
+
+	private static MemberAddress findOrCreateSalesSeedAddress(
+			Member member,
+			MemberAddressRepository memberAddressRepository
+	) {
+		Optional<MemberAddress> existing = memberAddressRepository.findByMember_IdAndAddressName(
+				member.getId(),
+				SALES_SEED_ADDRESS_NAME
+		);
+		if (existing.isPresent()) {
+			return existing.get();
+		}
+
+		Optional<MemberAddress> defaultAddress = memberAddressRepository.findFirstByMember_IdAndIsDefaultTrue(member.getId());
+		if (defaultAddress.isPresent()) {
+			return defaultAddress.get();
+		}
+
+		if (!memberAddressRepository.findByMember_IdOrderByIsDefaultDescCreatedAtDesc(member.getId()).isEmpty()) {
+			return memberAddressRepository.findByMember_IdOrderByIsDefaultDescCreatedAtDesc(member.getId()).get(0);
+		}
+
+		String recipientName = member.getLoginId();
+		String phone = String.format("010%08d", member.getId() % 100_000_000L);
+
+		MemberAddress address = MemberAddress.create(
+				member,
+				SALES_SEED_ADDRESS_NAME,
+				recipientName,
+				"06236",
+				"서울특별시 강남구 테헤란로",
+				"Mock 101호",
+				phone,
+				null,
+				"Mock 총판매금액 시드 배송지",
+				true
+		);
+		MemberAddress saved = memberAddressRepository.save(address);
+		log.info("Mock 총판매 시드 배송지 생성: memberId={}, addressId={}", member.getId(), saved.getId());
+		return saved;
 	}
 
 	private static int calculateQuantity(int productPrice, int targetAmount) {

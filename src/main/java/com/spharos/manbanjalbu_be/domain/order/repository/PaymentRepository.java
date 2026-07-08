@@ -75,4 +75,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 			@Param("method") PaymentMethod method,
 			@Param("status") PaymentStatus status
 	);
+
+	@Query("""
+			SELECT COALESCE(SUM(p.paidAmount), 0)
+			FROM Payment p
+			WHERE p.status = com.spharos.manbanjalbu_be.domain.order.enums.PaymentStatus.PAID
+			""")
+	long sumTotalPaidAmount();
 }
