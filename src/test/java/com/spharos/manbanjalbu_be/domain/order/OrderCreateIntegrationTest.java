@@ -269,6 +269,8 @@ class OrderCreateIntegrationTest {
 						)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value(true))
+				.andExpect(jsonPath("$.data.orderType").value("RESERVATION"))
+				.andExpect(jsonPath("$.data.reservationDeliveryDate").value(reservationDate.toString()))
 				.andReturn();
 
 		String orderNo = com.jayway.jsonpath.JsonPath.read(

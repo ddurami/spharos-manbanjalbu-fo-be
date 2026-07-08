@@ -11,22 +11,31 @@ import com.spharos.manbanjalbu_be.domain.member.entity.MemberAddress;
 import com.spharos.manbanjalbu_be.domain.member.repository.MemberAddressRepository;
 import com.spharos.manbanjalbu_be.domain.member.repository.MemberRepository;
 import com.spharos.manbanjalbu_be.domain.order.dto.request.OrderCreateRequest;
+import com.spharos.manbanjalbu_be.domain.order.dto.request.OrderListFilter;
 import com.spharos.manbanjalbu_be.domain.order.dto.response.OrderCreateResponse;
+import com.spharos.manbanjalbu_be.domain.order.dto.response.OrderDetailResponse;
+import com.spharos.manbanjalbu_be.domain.order.dto.response.OrderListResponse;
+import com.spharos.manbanjalbu_be.domain.order.dto.response.OrderSummaryResponse;
 import com.spharos.manbanjalbu_be.domain.order.entity.Order;
 import com.spharos.manbanjalbu_be.domain.order.entity.OrderItem;
 import com.spharos.manbanjalbu_be.domain.order.enums.OrderCategory;
 import com.spharos.manbanjalbu_be.domain.order.enums.OrderType;
+import com.spharos.manbanjalbu_be.domain.order.repository.OrderItemRepository;
 import com.spharos.manbanjalbu_be.domain.order.repository.OrderRepository;
 import com.spharos.manbanjalbu_be.domain.order.support.OrderCreateCommand;
 import com.spharos.manbanjalbu_be.domain.order.support.OrderCreateFieldSpec;
 import com.spharos.manbanjalbu_be.domain.order.support.OrderNameGenerator;
 import com.spharos.manbanjalbu_be.domain.order.support.OrderNoGenerator;
+import com.spharos.manbanjalbu_be.domain.order.support.OrderQuerySpec;
+import com.spharos.manbanjalbu_be.domain.order.support.OrderThumbnailResolver;
 import com.spharos.manbanjalbu_be.domain.order.support.PaymentNoGenerator;
 import com.spharos.manbanjalbu_be.domain.payment.entity.PaymentHistory;
 import com.spharos.manbanjalbu_be.domain.payment.repository.PaymentHistoryRepository;
 import com.spharos.manbanjalbu_be.domain.product.entity.Product;
 import com.spharos.manbanjalbu_be.global.exception.BusinessException;
 import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +55,7 @@ public class OrderService {
 	private final MemberRepository memberRepository;
 	private final MemberAddressRepository memberAddressRepository;
 	private final OrderRepository orderRepository;
+	private final OrderItemRepository orderItemRepository;
 	private final PaymentHistoryRepository paymentHistoryRepository;
 	private final OrderNoGenerator orderNoGenerator;
 	private final PaymentNoGenerator paymentNoGenerator;
@@ -56,6 +66,7 @@ public class OrderService {
 			MemberRepository memberRepository,
 			MemberAddressRepository memberAddressRepository,
 			OrderRepository orderRepository,
+			OrderItemRepository orderItemRepository,
 			PaymentHistoryRepository paymentHistoryRepository,
 			OrderNoGenerator orderNoGenerator,
 			PaymentNoGenerator paymentNoGenerator
@@ -65,6 +76,7 @@ public class OrderService {
 		this.memberRepository = memberRepository;
 		this.memberAddressRepository = memberAddressRepository;
 		this.orderRepository = orderRepository;
+		this.orderItemRepository = orderItemRepository;
 		this.paymentHistoryRepository = paymentHistoryRepository;
 		this.orderNoGenerator = orderNoGenerator;
 		this.paymentNoGenerator = paymentNoGenerator;
@@ -144,6 +156,88 @@ public class OrderService {
 		paymentHistoryRepository.save(PaymentHistory.recordReady(savedOrder.getPayment(), memberId));
 		cartService.completeCartItemsForOrder(memberId, cartItems, savedOrder.getOrderNo());
 		return OrderCreateResponse.from(savedOrder);
+	}
+
+	@Transactional(readOnly = true)
+	public OrderDetailResponse getOrderDetail(Long memberId, String orderNo) {
+		if (memberId == null) {
+			throw new BusinessException(ErrorCode.UNAUTHORIZED);
+		}
+
+		Order order = orderRepository.findByOrderNoWithDetails(orderNo)
+				.orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+		if (!order.getMember().getId().equals(memberId)) {
+			throw new BusinessException(ErrorCode.ORDER_UNAUTHORIZED);
+		}
+
+		List<OrderItem> items = orderItemRepository.findAllByOrderIdWithProductOrderByIdAsc(order.getId());
+		return OrderDetailResponse.from(order, items);
+	}
+
+	@Transactional(readOnly = true)
+	public OrderListResponse getOrders(Long memberId, OrderListFilter filter, Pageable pageable) {
+		if (memberId == null) {
+			throw new BusinessException(ErrorCode.UNAUTHORIZED);
+		}
+
+		LocalDateTime fromDate = OrderQuerySpec.resolveFromDate(filter.period());
+		Page<Order> orderPage = findOrderPage(memberId, filter, fromDate, pageable);
+		List<Long> orderIds = orderPage.getContent().stream()
+				.map(Order::getId)
+				.toList();
+
+		if (orderIds.isEmpty()) {
+			return new OrderListResponse(
+					List.of(),
+					orderPage.getNumber(),
+					orderPage.getTotalPages(),
+					orderPage.getTotalElements()
+			);
+		}
+
+		Map<Long, Order> ordersById = orderRepository.findAllByIdInWithPaymentAndDelivery(orderIds).stream()
+				.collect(Collectors.toMap(Order::getId, Function.identity()));
+		Map<Long, String> thumbnailsByOrderId = OrderThumbnailResolver.resolveByOrderId(
+				orderItemRepository.findAllByOrderIdInWithProduct(orderIds)
+		);
+
+		List<OrderSummaryResponse> orders = orderIds.stream()
+				.map(orderId -> OrderSummaryResponse.from(
+						ordersById.get(orderId),
+						thumbnailsByOrderId.get(orderId)
+				))
+				.toList();
+
+		return new OrderListResponse(
+				orders,
+				orderPage.getNumber(),
+				orderPage.getTotalPages(),
+				orderPage.getTotalElements()
+		);
+	}
+
+	private Page<Order> findOrderPage(
+			Long memberId,
+			OrderListFilter filter,
+			LocalDateTime fromDate,
+			Pageable pageable
+	) {
+		if (filter.orderType() != null) {
+			return orderRepository.findByMember_IdAndOrderTypeAndOrderAtGreaterThanEqualOrderByOrderAtDesc(
+					memberId,
+					filter.orderType(),
+					fromDate,
+					pageable
+			);
+		}
+
+		return orderRepository.findByMember_IdAndOrderStatusNotInAndOrderAtGreaterThanEqualOrderByOrderAtDesc(
+				memberId,
+				OrderQuerySpec.EXCLUDED_ORDER_HISTORY_STATUSES,
+				fromDate,
+				pageable
+		);
 	}
 
 	private List<CartItem> loadCartItemsInRequestOrder(Long memberId, List<Long> cartItemIds) {

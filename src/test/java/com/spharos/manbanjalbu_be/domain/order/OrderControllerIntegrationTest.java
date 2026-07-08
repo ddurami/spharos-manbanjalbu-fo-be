@@ -70,6 +70,8 @@ class OrderControllerIntegrationTest {
 				.andExpect(jsonPath("$.data.orderNo").value(org.hamcrest.Matchers.startsWith("ORD")))
 				.andExpect(jsonPath("$.data.orderName").value("콜드브루 텀블러"))
 				.andExpect(jsonPath("$.data.orderStatus").value("PENDING"))
+				.andExpect(jsonPath("$.data.orderType").value("DELIVERY"))
+				.andExpect(jsonPath("$.data.reservationDeliveryDate").doesNotExist())
 				.andExpect(jsonPath("$.data.amount").value(70_000))
 				.andExpect(jsonPath("$.data.deliveryFee").value(0))
 				.andExpect(jsonPath("$.data.orderAmount").value(70_000))
