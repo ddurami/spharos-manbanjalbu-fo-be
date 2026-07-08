@@ -23,6 +23,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import com.spharos.manbanjalbu_be.global.exception.BusinessException;
+import com.spharos.manbanjalbu_be.global.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -142,6 +144,7 @@ public class Order {
 		order.orderType = command.orderType();
 		order.orderCategory = command.orderCategory();
 		order.deliveryMemo = command.deliveryMemo();
+		order.reservationDeliveryDate = command.reservationDeliveryDate();
 
 		OrderCreateFieldSpec.OrderAmounts amounts = command.amounts();
 		order.amount = amounts.amount();
@@ -170,5 +173,16 @@ public class Order {
 
 	public void registerDelivery() {
 		this.delivery = Delivery.create(this);
+	}
+
+	/** 결제 완료 시 주문 상태를 PAID로 변경한다. */
+	public void markPaid() {
+		if (orderStatus == OrderStatus.PAID) {
+			throw new BusinessException(ErrorCode.ALREADY_PAID);
+		}
+		if (orderStatus != OrderStatus.PENDING) {
+			throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
+		}
+		this.orderStatus = OrderStatus.PAID;
 	}
 }

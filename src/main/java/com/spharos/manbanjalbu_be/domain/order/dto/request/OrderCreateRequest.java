@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Schema(description = "주문 생성 요청")
@@ -38,6 +39,9 @@ public record OrderCreateRequest(
 		OrderType orderType,
 
 		@Schema(description = "주문 카테고리 (기본 GENERAL)", example = "GENERAL")
-		OrderCategory orderCategory
+		OrderCategory orderCategory,
+
+		@Schema(description = "예약 배송일 (YYYY-MM-DD). orderType=RESERVATION 시 필수", example = "2026-07-15")
+		LocalDate reservationDeliveryDate
 ) {
 }

@@ -73,4 +73,20 @@ public class ReservationProduct {
 	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
 
+	public boolean isReservationAvailable(LocalDateTime at) {
+		if (reservationStatus != ReservationStatus.READY && reservationStatus != ReservationStatus.OPEN) {
+			return false;
+		}
+
+		if (at.isBefore(reservationStartAt) || at.isAfter(reservationEndAt)) {
+			return false;
+		}
+
+		return getRemainingQuantity() > 0;
+	}
+
+	public int getRemainingQuantity() {
+		return reservationQuantity - reservedQuantity;
+	}
+
 }

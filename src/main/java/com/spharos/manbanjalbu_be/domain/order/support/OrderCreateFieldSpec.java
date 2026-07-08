@@ -23,6 +23,7 @@ public final class OrderCreateFieldSpec {
 	public static final OrderCategory DEFAULT_ORDER_CATEGORY = OrderCategory.GENERAL;
 	public static final PaymentStatus INITIAL_PAYMENT_STATUS = PaymentStatus.READY;
 	public static final DeliveryStatus INITIAL_DELIVERY_STATUS = DeliveryStatus.READY;
+	public static final int RESERVATION_MONTHS_LIMIT = 3;
 
 	/**
 	 * member_address → orders 배송지 스냅샷 매핑.

@@ -15,10 +15,11 @@ public record CartItemResponse(
 		boolean isBest,
 		boolean isNew,
 		int quantity,
-		LocalDateTime createdAt
+		LocalDateTime createdAt,
+		boolean reservationAvailable
 ) {
 
-	public static CartItemResponse from(CartItem cartItem) {
+	public static CartItemResponse from(CartItem cartItem, boolean reservationAvailable) {
 		Product product = cartItem.getProduct();
 
 		String thumbnailUrl = product.getMediaList().stream()
@@ -36,7 +37,8 @@ public record CartItemResponse(
 				product.isBest(),
 				product.isNew(),
 				cartItem.getQuantity(),
-				cartItem.getCreatedAt()
+				cartItem.getCreatedAt(),
+				reservationAvailable
 		);
 	}
 }

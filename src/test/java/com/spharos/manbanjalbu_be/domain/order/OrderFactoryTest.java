@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -109,6 +110,7 @@ class OrderFactoryTest {
 				OrderType.DELIVERY,
 				OrderCategory.GENERAL,
 				"문 앞에 놓아주세요",
+				null,
 				OrderCreateFieldSpec.toRecipientSnapshot(address),
 				OrderCreateFieldSpec.calculateMvpAmounts(45_000),
 				orderAt
@@ -131,6 +133,41 @@ class OrderFactoryTest {
 		assertThat(order.getRecipientBaseAddress()).isEqualTo("서울시 강남구");
 		assertThat(order.getRecipientDetailAddress()).isEqualTo("101동");
 		assertThat(order.getOrderAt()).isEqualTo(orderAt);
+	}
+
+	@Test
+	void orderCreateStoresReservationDeliveryDate() throws Exception {
+		Member member = Member.create("buyer", "encoded");
+		MemberAddress address = MemberAddress.create(
+				member,
+				"집",
+				"홍길동",
+				"06234",
+				"서울시 강남구",
+				"101동",
+				"010-1234-5678",
+				null,
+				null,
+				true
+		);
+		LocalDate reservationDate = LocalDate.of(2026, 8, 15);
+
+		Order order = Order.create(new OrderCreateCommand(
+				member,
+				address,
+				"ORD202607061030000003",
+				"아메리카노",
+				OrderType.RESERVATION,
+				OrderCategory.GENERAL,
+				null,
+				reservationDate,
+				OrderCreateFieldSpec.toRecipientSnapshot(address),
+				OrderCreateFieldSpec.calculateMvpAmounts(5_000),
+				LocalDateTime.now()
+		));
+
+		assertThat(order.getOrderType()).isEqualTo(OrderType.RESERVATION);
+		assertThat(order.getReservationDeliveryDate()).isEqualTo(reservationDate);
 	}
 
 	@Test
@@ -171,6 +208,7 @@ class OrderFactoryTest {
 				"아메리카노",
 				OrderType.DELIVERY,
 				OrderCategory.GENERAL,
+				null,
 				null,
 				OrderCreateFieldSpec.toRecipientSnapshot(address),
 				OrderCreateFieldSpec.calculateMvpAmounts(5_000),
